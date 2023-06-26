@@ -17,3 +17,7 @@ variable "postgres_password" {
   default = "secret"
   sensitive = true
 }
+
+variable "postgres_database" {
+  default = "taro-db"
+}
