@@ -12,4 +12,6 @@ resource "azurerm_postgresql_server" "pg-server" {
   version = 11
   ssl_enforcement_enabled = true
   auto_grow_enabled = false
+  administrator_login = var.postgres_user
+  administrator_login_password = var.postgres_password
 }
