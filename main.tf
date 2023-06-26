@@ -11,4 +11,5 @@ resource "azurerm_postgresql_server" "pg-server" {
   storage_mb = 5120
   version = 11
   ssl_enforcement_enabled = true
+  auto_grow_enabled = false
 }
