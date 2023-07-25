@@ -55,6 +55,21 @@ jobs:
           postgres_server_encrypted=$(gpg --symmetric --batch --passphrase "$SECRET" --output - <(echo "$POSTGRES_SERVER") | base64 -w0)
           echo "sql_server_encrypted=$postgres_server_encrypted" >> $GITHUB_OUTPUT
 
+  deploy-frontend:
+    name: 'Deploy Frontend'
+    needs: tf-setup
+    runs-on: ubuntu-latest
+    environment: staging
+    env: 
+        PAT: ${{ secrets.PAT }}
+
+    steps:
+        - name: 'Trigger deploy workflow in frontend repo'
+          run: |
+           curl -X POST https://api.github.com/repos/Kafkaese/taro-web/dispatches \
+            -H 'Accept: application/vnd.github.everest-preview+json' \
+            -u $PAT \
+            --data '{"event_type": "trigger-deploy", "client_payload": { "acr-login": "tarostaging" }}'
 
   tf-destroy:
     name: 'Destroy staging environment'
