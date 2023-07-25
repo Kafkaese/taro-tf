@@ -3,6 +3,7 @@ resource "azurerm_resource_group" "rg" {
   name     = var.resource_group_name
 }
 
+/*
 resource "azurerm_postgresql_flexible_server" "pg-staging-server" {
   name = var.postgres_server_name
   location = azurerm_resource_group.rg.location
@@ -29,7 +30,7 @@ resource "azurerm_storage_account" "storage" {
   account_tier = "Standard"
   account_replication_type = "LRS"
 }
-
+*/
 resource "azurerm_container_registry" "taro-registry" {
   name                = var.container_registry_name
   resource_group_name = azurerm_resource_group.rg.name
