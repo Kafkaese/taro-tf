@@ -10,6 +10,7 @@ resource "azurerm_postgresql_flexible_server" "pg-staging-server" {
   sku_name = "B_Standard_B1ms"
   storage_mb = 32768
   version = 11
+  zone = 2
   administrator_login = var.postgres_user
   administrator_password = var.postgres_password
 }
