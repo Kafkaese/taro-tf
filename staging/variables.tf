@@ -9,7 +9,7 @@ variable "resource_group_name" {
 }
 
 variable "storage_account_name" {
-  default = "taro-staging-storage"
+  default = "tarostagingstorage"
 }
 
 variable "postgres_server_name" {
