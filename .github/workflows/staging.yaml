@@ -1,0 +1,57 @@
+name: Staging
+
+on: 
+  workflow_dispatch
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency: staging_environment
+
+env: 
+  ENV: staging
+
+jobs:
+  tf-setup:
+    name: 'Provision staging environment'
+    runs-on: ubuntu-latest
+    outputs:
+      sql-server-encrypted: ${{ steps.terraform.outputs.sql_server_encrypted }}
+    environment: staging
+    env:
+        ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+        ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+        ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+        ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+        TF_VAR_postgres_user: ${{ secrets.TF_VAR_postgres_user }}
+        TF_VAR_postgres_password: ${{ secrets.TF_VAR_postgres_password }}
+        SECRET: ${{ secrets.PGP_SECRET_SIGNING_PASSPHRASE }}
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: 'Terraform Setup'
+        uses: hashicorp/setup-terraform@v1
+        with:
+          terraform_wrapper: false
+      - name: 'Initialize Terraform'
+        working-directory: ./staging
+        run: terraform init
+      - name: 'Get state'
+        working-directory: ./staging
+        run: terraform plan -refresh-only
+      - name: 'Make plan'
+        working-directory: ./staging
+        run: terraform plan -out test.tfplan
+      - name: 'Apply plan'
+        working-directory: ./staging
+        run: terraform apply test.tfplan
+      - name: Save outputs
+        id: terraform
+        working-directory: ./staging
+        run: |
+          POSTGRES_SERVER=$(terraform output -raw postgres_server)
+          postgres_server_encrypted=$(gpg --symmetric --batch --passphrase "$SECRET" --output - <(echo "$POSTGRES_SERVER") | base64 -w0)
+          echo "sql_server_encrypted=$postgres_server_encrypted" >> $GITHUB_OUTPUT
+
