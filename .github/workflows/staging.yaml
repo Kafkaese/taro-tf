@@ -55,3 +55,33 @@ jobs:
           postgres_server_encrypted=$(gpg --symmetric --batch --passphrase "$SECRET" --output - <(echo "$POSTGRES_SERVER") | base64 -w0)
           echo "sql_server_encrypted=$postgres_server_encrypted" >> $GITHUB_OUTPUT
 
+
+  tf-destroy:
+    name: 'Destroy staging environment'
+    if: ${{ always() }}
+    needs: [tf-setup]
+    runs-on: ubuntu-latest
+    environment: staging
+    env:
+        ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+        ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+        ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+        ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+    - name: 'Terraform Setup'
+      uses: hashicorp/setup-terraform@v1
+    - name: 'Initialize Terraform'
+      working-directory: ./staging
+      run: terraform init
+    - name: 'Get state'
+      working-directory: ./staging
+      run: terraform plan -refresh-only
+    - name: 'Make plan'
+      working-directory: ./staging
+      run: terraform plan -destroy -out test.tfplan
+    - name: 'Apply plan'
+      working-directory: ./staging
+      run: terraform apply test.tfplan
