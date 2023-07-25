@@ -16,7 +16,7 @@ resource "azurerm_postgresql_flexible_server" "pg-staging-server" {
 
 resource "azurerm_postgresql_flexible_server_database" "pg-staging-db" {
   name = var.postgres_database
-  server_id = azurerm_postgresql_flexible_server.pg-server.id
+  server_id = azurerm_postgresql_flexible_server.pg-staging-server.id
   charset = "UTF8"
   collation = "en_US.utf8"
 }
