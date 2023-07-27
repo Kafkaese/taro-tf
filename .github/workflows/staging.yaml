@@ -65,6 +65,7 @@ jobs:
 
     steps:
         - name: 'Trigger deploy workflow in frontend repo'
+          id: trigger
           run: |
            export JSON=$(jq -n --arg one "$env_var1" --arg two "$ACR_LOGIN" '{event_type: "trigger_deploy", client_payload: {"acr-login": $two}}')
            echo $JSON
@@ -72,6 +73,16 @@ jobs:
             -H 'Accept: application/vnd.github.everest-preview+json' \
             -u $PAT \
             --data "$JSON"
+
+        - name: Wait for Deployment Workflow in Frontend Repository
+          id: wait
+          run: |
+            echo $(echo '${{ steps.trigger.outputs.response }}' | jq -r '.workflow_run.id')"
+            echo "Waiting for frontend deployment to complete..."
+            until [[ $(curl -s -X GET -u "PAT" https://api.github.com/repos/Kafkaese/taro-map/actions/runs/$(echo '${{ steps.trigger.outputs.response }}' | jq -r '.workflow_run.id')" | jq '.workflow_runs[0].status') == '"completed"' ]]; do
+              sleep 10
+            done
+          continue-on-error: true
 
   tf-destroy:
     name: 'Destroy staging environment'
