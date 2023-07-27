@@ -83,7 +83,6 @@ jobs:
             repo: taro-map
             owner: Kafkaese
             workflow: staging.yml
-            workflow_inputs: { "acr-login": "$ACR_LOGIN" }
             workflow_timeout_seconds: 120
       
 
