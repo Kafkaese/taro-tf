@@ -17,7 +17,7 @@ jobs:
     name: 'Provision staging environment'
     runs-on: ubuntu-latest
     outputs:
-      sql-server-encrypted: ${{ steps.terraform.outputs.sql_server_encrypted }}
+      acr-login: ${{ steps.terraform.outputs.acr_login }}
     environment: staging
     env:
         ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
@@ -51,9 +51,8 @@ jobs:
         id: terraform
         working-directory: ./staging
         run: |
-          POSTGRES_SERVER=$(terraform output -raw postgres_server)
-          postgres_server_encrypted=$(gpg --symmetric --batch --passphrase "$SECRET" --output - <(echo "$POSTGRES_SERVER") | base64 -w0)
-          echo "sql_server_encrypted=$postgres_server_encrypted" >> $GITHUB_OUTPUT
+          ACR_LOGIN=$(terraform output -raw acr_login)
+          echo "acr_login=$ACR_LOGIN" >> $GITHUB_OUTPUT
 
   deploy-frontend:
     name: 'Deploy Frontend'
@@ -62,6 +61,7 @@ jobs:
     environment: staging
     env: 
         PAT: ${{ secrets.PAT }}
+        ACR_LOGIN: ${{ needs.tf-setup.outputs.acr-login }}
 
     steps:
         - name: 'Trigger deploy workflow in frontend repo'
@@ -69,7 +69,7 @@ jobs:
            curl -X POST https://api.github.com/repos/Kafkaese/taro-map/dispatches \
             -H 'Accept: application/vnd.github.everest-preview+json' \
             -u $PAT \
-            --data '{"event_type": "trigger-deploy", "client_payload": { "acr-login": "tarostaging" }}'
+            --data '{"event_type": "trigger-deploy", "client_payload": { "acr-login": $ACR_LOGIN }}'
 
   tf-destroy:
     name: 'Destroy staging environment'
