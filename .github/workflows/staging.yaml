@@ -74,6 +74,19 @@ jobs:
             --data "$JSON")
             echo $reponse
 
+        - name: Dispatch an action and get the run ID
+          uses: codex-/return-dispatch@v1
+          id: return_dispatch
+          with:
+            token: ${{ secrets.GHP }}
+            ref: staging
+            repo: taro-map
+            owner: Kafkaese
+            workflow: staging.yml
+            workflow_inputs: { "acr-login": "$ACR_LOGIN" }
+            workflow_timeout_seconds: 120
+      
+
         - name: Wait for Deployment Workflow in Frontend Repository
           id: wait
           run: |
