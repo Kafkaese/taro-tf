@@ -66,10 +66,11 @@ jobs:
     steps:
         - name: 'Trigger deploy workflow in frontend repo'
           run: |
+           export JSON=$(jq -n --arg one "$env_var1" --arg two "$ACR_LOGIN" '{event_type: "trigger_deploy", client_payload: {"acr-login": $two}}')
            curl -X POST https://api.github.com/repos/Kafkaese/taro-map/dispatches \
             -H 'Accept: application/vnd.github.everest-preview+json' \
             -u $PAT \
-            --data '{"event_type": "trigger-deploy", "client_payload": { "acr-login": "$ACR_LOGIN" }}'
+            --data $JSON
 
   tf-destroy:
     name: 'Destroy staging environment'
