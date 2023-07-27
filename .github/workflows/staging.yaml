@@ -60,7 +60,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: staging
     env: 
-        PAT: ${{ secrets.PAT }}
+        PAT: ${{ secrets.GHP }}
         ACR_LOGIN: ${{ needs.tf-setup.outputs.acr-login }}
 
     steps:
