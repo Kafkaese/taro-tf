@@ -69,7 +69,7 @@ jobs:
            curl -X POST https://api.github.com/repos/Kafkaese/taro-map/dispatches \
             -H 'Accept: application/vnd.github.everest-preview+json' \
             -u $PAT \
-            --data '{"event_type": "trigger-deploy", "client_payload": { "acr-login": $ACR_LOGIN }}'
+            --data '{"event_type": "trigger-deploy", "client_payload": { "acr-login": "$ACR_LOGIN" }}'
 
   tf-destroy:
     name: 'Destroy staging environment'
