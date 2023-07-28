@@ -82,7 +82,6 @@ jobs:
             echo "Waiting for frontend deployment to complete..."
             until [[ $(curl -s -X GET -u "$PAT" https://api.github.com/repos/Kafkaese/taro-map/actions/runs/${{steps.return_dispatch.outputs.run_id}} | jq '.status') == '"completed"' ]]; do
               sleep 10
-              curl -s -X GET -u "$PAT" https://api.github.com/repos/Kafkaese/taro-map/actions/runs/${{steps.return_dispatch.outputs.run_id}}
             done
           continue-on-error: true
 
