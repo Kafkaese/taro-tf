@@ -64,16 +64,6 @@ jobs:
         ACR_LOGIN: ${{ needs.tf-setup.outputs.acr-login }}
 
     steps:
-        - name: 'Trigger deploy workflow in frontend repo'
-          id: trigger
-          run: |
-           export JSON=$(jq -n --arg one "$env_var1" --arg two "$ACR_LOGIN" '{event_type: "trigger_deploy", client_payload: {"acr-login": $two}}')
-           reponse=$(curl -v -s -X POST https://api.github.com/repos/Kafkaese/taro-map/dispatches \
-            -H 'Accept: application/vnd.github.everest-preview+json' \
-            -u $PAT \
-            --data "$JSON")
-            echo $reponse
-
         - name: Dispatch an action and get the run ID
           uses: codex-/return-dispatch@v1
           id: return_dispatch
@@ -82,7 +72,7 @@ jobs:
             ref: refs/heads/main
             repo: taro-map
             owner: Kafkaese
-            workflow: staging.yaml
+            workflow: staging.yaml 
             workflow_timeout_seconds: 120
       
 
