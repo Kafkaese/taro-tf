@@ -73,7 +73,6 @@ jobs:
             repo: taro-map
             owner: Kafkaese
             workflow: staging.yaml
-            workflow_inputs: { "key": "value" }
             workflow_timeout_seconds: 120
       
 
