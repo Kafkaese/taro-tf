@@ -86,7 +86,6 @@ jobs:
             if [[ $(curl -s -X GET -u "$PAT" https://api.github.com/repos/Kafkaese/taro-map/actions/runs/${{steps.return_dispatch.outputs.run_id}} | jq '.conclusion') != '"success"' ]]; then
               false
             fi
-          continue-on-error: true
 
   deploy-backend:
     name: 'Deploy Backend'
