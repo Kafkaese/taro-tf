@@ -53,7 +53,10 @@ jobs:
         run: |
           ACR_LOGIN=$(terraform output -raw acr_login)
           echo "acr_login=$ACR_LOGIN" >> $GITHUB_OUTPUT
-
+          POSTGRES_SERVER=$(terraform output -raw postgres_server)
+          postgres_server_encrypted=$(gpg --symmetric --batch --passphrase "$SECRET" --output - <(echo "$POSTGRES_SERVER") | base64 -w0)
+          echo "sql_server_encrypted=$postgres_server_encrypted" >> $GITHUB_OUTPUT
+          
   deploy-frontend:
     name: 'Deploy Frontend'
     needs: tf-setup
@@ -83,6 +86,9 @@ jobs:
             until [[ $(curl -s -X GET -u "$PAT" https://api.github.com/repos/Kafkaese/taro-map/actions/runs/${{steps.return_dispatch.outputs.run_id}} | jq '.status') == '"completed"' ]]; do
               sleep 10
             done
+            if [$(curl -s -X GET -u "$PAT" https://api.github.com/repos/Kafkaese/taro-map/actions/runs/${{steps.return_dispatch.outputs.run_id}} | jq '.result') != '"success"' ]; then
+              false
+            fi
           continue-on-error: true
 
   deploy-backend:
