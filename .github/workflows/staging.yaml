@@ -79,10 +79,10 @@ jobs:
           id: return_dispatch
           with:
             token: ${{ secrets.GHP }}
-            ref: staging
+            ref: refs/heads/main
             repo: taro-map
             owner: Kafkaese
-            workflow: staging.yml
+            workflow: staging.yaml
             workflow_timeout_seconds: 120
       
 
