@@ -68,7 +68,7 @@ jobs:
           uses: mathze/workflow-dispatch-action@v1.1.0
           id: return_dispatch
           with:
-            token: ${{ secrets.GHP }}
+            token: ${{ secrets.GHP_RAW }}
             ref: main
             repo: taro-map
             owner: Kafkaese
