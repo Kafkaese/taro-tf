@@ -83,7 +83,7 @@ jobs:
             until [[ $(curl -s -X GET -u "$PAT" https://api.github.com/repos/Kafkaese/taro-map/actions/runs/${{steps.return_dispatch.outputs.run_id}} | jq '.status') == '"completed"' ]]; do
               sleep 10
             done
-            if [$(curl -s -X GET -u "$PAT" https://api.github.com/repos/Kafkaese/taro-map/actions/runs/${{steps.return_dispatch.outputs.run_id}} | jq '.result') != '"success"' ]; then
+            if [[ $(curl -s -X GET -u "$PAT" https://api.github.com/repos/Kafkaese/taro-map/actions/runs/${{steps.return_dispatch.outputs.run_id}} | jq '.result') != '"success"' ]]; then
               false
             fi
           continue-on-error: true
