@@ -85,10 +85,41 @@ jobs:
             done
           continue-on-error: true
 
+  deploy-backend:
+    name: 'Deploy Backend'
+    needs: tf-setup
+    runs-on: ubuntu-latest
+    environment: staging
+    env: 
+        PAT: ${{ secrets.GHP }}
+        ACR_LOGIN: ${{ needs.tf-setup.outputs.acr-login }}
+
+    steps:
+        - name: Dispatch an action and get the run ID
+          uses: codex-/return-dispatch@v1
+          id: return_dispatch
+          with:
+            token: ${{ secrets.GHP_RAW }}
+            ref: refs/heads/staging
+            repo: taro-data
+            owner: Kafkaese
+            workflow: staging.yaml
+            workflow_timeout_seconds: 120
+      
+
+        - name: Wait for Deployment Workflow in Frontend Repository
+          id: wait
+          run: |
+            echo "Waiting for frontend deployment to complete..."
+            until [[ $(curl -s -X GET -u "$PAT" https://api.github.com/repos/Kafkaese/taro-data/actions/runs/${{steps.return_dispatch.outputs.run_id}} | jq '.status') == '"completed"' ]]; do
+              sleep 10
+            done
+          continue-on-error: true
+
   tf-destroy:
     name: 'Destroy staging environment'
     if: ${{ always() }}
-    needs: [tf-setup, deploy-frontend]
+    needs: [tf-setup, deploy-frontend, deploy-backend]
     runs-on: ubuntu-latest
     environment: staging
     env:
