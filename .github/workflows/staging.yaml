@@ -73,6 +73,8 @@ jobs:
             repo: taro-map
             owner: Kafkaese
             workflow: staging.yaml
+            workflow-inputs: '{"key": "value"}'
+            workflow_timeout_seconds: 120
       
 
         - name: Wait for Deployment Workflow in Frontend Repository
