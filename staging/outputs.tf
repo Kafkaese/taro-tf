@@ -1,3 +1,3 @@
 output "acr_login" {
-  value = azurerm_container_registry.taro-registry.login_server
+  value = azurerm_container_registry.container-registry.login_server
 }
