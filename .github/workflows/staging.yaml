@@ -107,7 +107,7 @@ jobs:
             echo $POSTGRES_HOST
             echo "POSTGRES_HOST='$POSTGRES_HOST'" >> "$GITHUB_ENV"
             cat $GITHUB_ENV
-            echo "${{ env.POSTGRES_HOST }}
+            echo "${{ env.POSTGRES_HOST }}"
         - name: Dispatch an action and get the run ID
           uses: codex-/return-dispatch@v1
           id: return_dispatch
