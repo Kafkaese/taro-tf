@@ -26,7 +26,7 @@ jobs:
         ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
         TF_VAR_postgres_user: ${{ secrets.TF_VAR_postgres_user }}
         TF_VAR_postgres_password: ${{ secrets.TF_VAR_postgres_password }}
-        SECRET: ${{ secrets.PGP_SECRET_SIGNING_PASSPHRASE }}
+        SECRET: ${{ secrets.PGP_PASSPHRASE}}
     
     steps:
       - name: Checkout
@@ -51,8 +51,11 @@ jobs:
         id: terraform
         working-directory: ./staging
         run: |
-          ACR_LOGIN=$(terraform output -raw acr_login)
-          echo "acr_login=$ACR_LOGIN" >> $GITHUB_OUTPUT
+          POSTGRES_SERVER=$(terraform output -raw postgres_server)
+          postgres_server_encrypted=$(gpg --symmetric --batch --passphrase "$SECRET" --output - <(echo "$POSTGRES_SERVER") | base64 -w0)
+          echo "sql_server_encrypted=$postgres_server_encrypted" >> $GITHUB_OUTPUT
+          
+
           
   deploy-frontend:
     name: 'Deploy Frontend'
@@ -61,7 +64,7 @@ jobs:
     environment: staging
     env: 
         PAT: ${{ secrets.GHP }}
-        ACR_LOGIN: ${{ needs.tf-setup.outputs.acr-login }}
+        ACR_LOGIN: ${{ needs.tf-setup.outputs.sql_server_encrypted }}
 
     steps:
         - name: Dispatch an action and get the run ID
@@ -94,9 +97,14 @@ jobs:
     environment: staging
     env: 
         PAT: ${{ secrets.GHP }}
-        ACR_LOGIN: ${{ needs.tf-setup.outputs.acr-login }}
+        SECRET: ${{ secrets.PGP_PASSPHRASE}}
 
     steps:
+        - name: 'Decrypt postgres server'
+          run: |
+            export POSTGRES_HOST=$(gpg --decrypt --quiet --batch --passphrase "$SECRET" --output - <(echo "${{ needs.tf-setup.outputs.sql-server-encrypted }}" | base64 --decode))
+            export POSTGRES_HOST=$(jq -n --arg one "$POSTGGRES_HOST" '{postgres_host: $one}')
+            echo "POSTGRES_HOST=$POSTGRES_HOST" >> "$GITHUB_ENV"
         - name: Dispatch an action and get the run ID
           uses: codex-/return-dispatch@v1
           id: return_dispatch
@@ -107,8 +115,7 @@ jobs:
             owner: Kafkaese
             workflow: staging.yaml
             workflow_timeout_seconds: 120
-      
-
+            workflow_inputs: ${{ env.POSTGRES_HOST }}
         - name: Wait for Deployment Workflow in Frontend Repository
           id: wait
           run: |
