@@ -102,8 +102,8 @@ jobs:
     steps:
         - name: 'Decrypt postgres server'
           run: |
-            export POSTGRES_HOST=$(gpg --decrypt --quiet --batch --passphrase "$SECRET" --output - <(echo "${{ needs.tf-setup.outputs.sql-server-encrypted }}" | base64 --decode))
-            export POSTGRES_HOST=$(jq -n --arg one "$POSTGGRES_HOST" '{postgres_host: $one}')
+            export pg_host_decrypted=$(gpg --decrypt --quiet --batch --passphrase "$SECRET" --output - <(echo "${{ needs.tf-setup.outputs.sql-server-encrypted }}" | base64 --decode))
+            export POSTGRES_HOST=$(jq -n --arg one "$pg_host_decrypted" '{postgres_host: $one}')
             echo "POSTGRES_HOST=$POSTGRES_HOST" >> "$GITHUB_ENV"
         - name: Dispatch an action and get the run ID
           uses: codex-/return-dispatch@v1
