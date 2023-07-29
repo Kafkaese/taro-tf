@@ -3,8 +3,7 @@ resource "azurerm_resource_group" "rg" {
   name     = var.resource_group_name
 }
 
-/*
-resource "azurerm_postgresql_flexible_server" "pg-staging-server" {
+resource "azurerm_postgresql_flexible_server" "pg-server" {
   name = var.postgres_server_name
   location = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
@@ -16,9 +15,9 @@ resource "azurerm_postgresql_flexible_server" "pg-staging-server" {
   administrator_password = var.postgres_password
 }
 
-resource "azurerm_postgresql_flexible_server_database" "pg-staging-db" {
+resource "azurerm_postgresql_flexible_server_database" "pg-db" {
   name = var.postgres_database
-  server_id = azurerm_postgresql_flexible_server.pg-staging-server.id
+  server_id = azurerm_postgresql_flexible_server.pg-server.id
   charset = "UTF8"
   collation = "en_US.utf8"
 }
@@ -30,7 +29,7 @@ resource "azurerm_storage_account" "storage" {
   account_tier = "Standard"
   account_replication_type = "LRS"
 }
-*/
+
 resource "azurerm_container_registry" "container-registry" {
   name                = var.container_registry_name
   resource_group_name = azurerm_resource_group.rg.name
