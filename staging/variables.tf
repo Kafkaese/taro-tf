@@ -12,8 +12,8 @@ variable "storage_account_name" {
   default = "tarostagingstorage"
 }
 
-variable "postgres_server_name" {
-    default = "taro-staging-postgres-server"
+variable "postgres_prefix" {
+    default = "staging-postgres-server"
   
 }
 
