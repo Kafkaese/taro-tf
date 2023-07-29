@@ -103,7 +103,7 @@ jobs:
         - name: 'Decrypt postgres server'
           run: |
             export pg_host_decrypted=$(gpg --decrypt --quiet --batch --passphrase "$SECRET" --output - <(echo "${{ needs.tf-setup.outputs.sql-server-encrypted }}" | base64 --decode))
-            echo "POSTGRES_HOST='$pg_host_decrypted'" >> "$GITHUB_ENV"
+            echo "POSTGRES_HOST=$pg_host_decrypted" >> "$GITHUB_ENV"
             cat $GITHUB_ENV
             echo "${{ env.POSTGRES_HOST }}"
         - name: Dispatch an action and get the run ID
