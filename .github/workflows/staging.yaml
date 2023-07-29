@@ -117,7 +117,7 @@ jobs:
             workflow: staging.yaml
             workflow_timeout_seconds: 120
             workflow_inputs: |
-              {"POSTGRES_HOST": "${{ env.POSTGRES_HOST }}"}
+              {"POSTGRES_HOST": \"${{ env.POSTGRES_HOST }}\"}
         - name: Wait for Deployment Workflow in Frontend Repository
           id: wait
           run: |
