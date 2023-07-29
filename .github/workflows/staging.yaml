@@ -116,7 +116,9 @@ jobs:
             until [[ $(curl -s -X GET -u "$PAT" https://api.github.com/repos/Kafkaese/taro-data/actions/runs/${{steps.return_dispatch.outputs.run_id}} | jq '.status') == '"completed"' ]]; do
               sleep 10
             done
-          continue-on-error: true
+            if [[ $(curl -s -X GET -u "$PAT" https://api.github.com/repos/Kafkaese/taro-data/actions/runs/${{steps.return_dispatch.outputs.run_id}} | jq '.conclusion') != '"success"' ]]; then
+              false
+            fi
 
   tf-destroy:
     name: 'Destroy staging environment'
