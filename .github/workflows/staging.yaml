@@ -105,7 +105,7 @@ jobs:
             export pg_host_decrypted=$(gpg --decrypt --quiet --batch --passphrase "$SECRET" --output - <(echo "${{ needs.tf-setup.outputs.sql-server-encrypted }}" | base64 --decode))
             export POSTGRES_HOST=$(jq -n -c --arg one "$pg_host_decrypted" {postgres_host: $one})
             echo $POSTGRES_HOST
-            echo "POSTGRES_HOST='$POSTGRES_HOST'" >> "$GITHUB_ENV"
+            echo "POSTGRES_HOST='$pg_host_decrypted'" >> "$GITHUB_ENV"
             cat $GITHUB_ENV
             echo "${{ env.POSTGRES_HOST }}"
         - name: Dispatch an action and get the run ID
@@ -118,7 +118,8 @@ jobs:
             owner: Kafkaese
             workflow: staging.yaml
             workflow_timeout_seconds: 120
-            workflow_inputs: ${{ env.POSTGRES_HOST }}
+            workflow_inputs: |
+              {"POSTGRES_HOST": ${{ env.POSTGRES_HOST }}}
         - name: Wait for Deployment Workflow in Frontend Repository
           id: wait
           run: |
