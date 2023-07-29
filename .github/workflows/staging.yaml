@@ -17,7 +17,7 @@ jobs:
     name: 'Provision staging environment'
     runs-on: ubuntu-latest
     outputs:
-      acr-login: ${{ steps.terraform.outputs.acr_login }}
+      sql-server-encrypted: ${{ steps.terraform.outputs.sql_server_encrypted }}
     environment: staging
     env:
         ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
