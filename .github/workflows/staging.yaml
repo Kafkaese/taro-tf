@@ -53,8 +53,9 @@ jobs:
         run: |
           POSTGRES_SERVER=$(terraform output -raw postgres_server)
           postgres_server_encrypted=$(gpg --symmetric --batch --passphrase "$SECRET" --output - <(echo "$POSTGRES_SERVER") | xxd -p)
+          echo postgres_server_encrypted
           echo "sql_server_encrypted=$postgres_server_encrypted" >> $GITHUB_OUTPUT
-          
+          cat $GITHUB_OUTPUT
 
           
   deploy-frontend:
