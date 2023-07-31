@@ -5,3 +5,11 @@ output "acr_login" {
 output "postgres_server" {
     value = "${azurerm_postgresql_flexible_server.pg-server.name}.postgres.database.azure.com"
 }
+
+output "rg-name" {
+  value = azurerm_resource_group.rg.name
+}
+
+output "rg-location" {
+  value = azurerm_resource_group.rg.location
+}
