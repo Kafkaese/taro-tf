@@ -102,7 +102,7 @@ jobs:
         TF_VAR_postgres_password: ${{ secrets.TF_VAR_postgres_password }}
 
     steps:
-        - 'Format postgres host for json'
+        - name: 'Format postgres host for json'
           run: echo "POSTGRES_HOST=\"${{ needs.tf-setup.outputs.sql-server-encrypted }}\"" >> "$GITHUB_ENV"
         - name: Dispatch an action and get the run ID
           uses: codex-/return-dispatch@v1
