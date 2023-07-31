@@ -52,7 +52,7 @@ jobs:
         working-directory: ./staging
         run: |
           POSTGRES_SERVER=$(terraform output -raw postgres_server)
-          postgres_server_encrypted=$(gpg --symmetric --batch --passphrase "$SECRET" --output - <(echo "$POSTGRES_SERVER") | base64 -w0)
+          postgres_server_encrypted=$(gpg --symmetric --batch --passphrase "$SECRET" --output - <(echo "$POSTGRES_SERVER") | | xxd -p)
           echo "sql_server_encrypted=$postgres_server_encrypted" >> $GITHUB_OUTPUT
           
 
@@ -106,7 +106,8 @@ jobs:
           run: |
             echo ${{ needs.tf-setup.outputs.sql-server-encrypted }}
             echo "POSTGRES_HOST=\"${{ needs.tf-setup.outputs.sql-server-encrypted }}\"" >> "$GITHUB_ENV"
-            echo ${{ env.POSTGRES_HOST }}
+            echo "${{ env.POSTGRES_HOST }}"
+            cat $GITHUB_ENV
         - name: Dispatch an action and get the run ID
           uses: codex-/return-dispatch@v1
           id: return_dispatch
