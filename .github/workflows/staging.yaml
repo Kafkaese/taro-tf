@@ -103,7 +103,10 @@ jobs:
 
     steps:
         - name: 'Format postgres host for json'
-          run: echo "POSTGRES_HOST=\"${{ needs.tf-setup.outputs.sql-server-encrypted }}\"" >> "$GITHUB_ENV"
+          run: |
+            echo ${{ needs.tf-setup.outputs.sql-server-encrypted }}
+            echo "POSTGRES_HOST=\"${{ needs.tf-setup.outputs.sql-server-encrypted }}\"" >> "$GITHUB_ENV"
+            echo ${{ env.POSTGRES_HOST }}
         - name: Dispatch an action and get the run ID
           uses: codex-/return-dispatch@v1
           id: return_dispatch
