@@ -24,8 +24,8 @@ jobs:
         ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
         ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
         ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
-        TF_VAR_postgres_user: ${{ secrets.TF_VAR_postgres_user }}
-        TF_VAR_postgres_password: ${{ secrets.TF_VAR_postgres_password }}
+        TF_VAR_postgres_user: ${{ secrets.TF_VAR_PG_USER }}
+        TF_VAR_postgres_password: ${{ secrets.TF_VAR_PG_PASSWORD }}
         SECRET: ${{ secrets.PGP_PASSPHRASE}}
     
     steps:
