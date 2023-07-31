@@ -52,7 +52,7 @@ jobs:
         working-directory: ./staging
         run: |
           POSTGRES_SERVER=$(terraform output -raw postgres_server)
-          postgres_server_encrypted=$(gpg --symmetric --batch --passphrase "$SECRET" --output - <(echo "$POSTGRES_SERVER") | | xxd -p)
+          postgres_server_encrypted=$(gpg --symmetric --batch --passphrase "$SECRET" --output - <(echo "$POSTGRES_SERVER") | xxd -p)
           echo "sql_server_encrypted=$postgres_server_encrypted" >> $GITHUB_OUTPUT
           
 
