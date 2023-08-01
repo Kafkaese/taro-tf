@@ -74,7 +74,7 @@ jobs:
           id: return_dispatch
           with:
             token: ${{ secrets.GHP_RAW }}
-            ref: refs/heads/staging
+            ref: refs/heads/test
             repo: taro-map
             owner: Kafkaese
             workflow: staging.yaml
