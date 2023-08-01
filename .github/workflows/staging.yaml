@@ -61,7 +61,7 @@ jobs:
           
   deploy-frontend:
     name: 'Deploy Frontend'
-    needs: tf-setup
+    needs: [tf-setup]
     runs-on: ubuntu-latest
     environment: staging
     env: 
@@ -94,7 +94,7 @@ jobs:
 
   deploy-backend:
     name: 'Deploy Backend'
-    needs: tf-setup
+    needs: [tf-setup, deploy-frontend]
     runs-on: ubuntu-latest
     environment: staging
     env: 
