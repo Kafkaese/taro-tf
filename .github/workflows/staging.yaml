@@ -36,20 +36,20 @@ jobs:
         with:
           terraform_wrapper: false
       - name: 'Initialize Terraform'
-        working-directory: ./staging
+        working-directory: ./staging_env
         run: terraform init
       - name: 'Get state'
-        working-directory: ./staging
+        working-directory: ./staging_env
         run: terraform plan -refresh-only
       - name: 'Make plan'
-        working-directory: ./staging
+        working-directory: ./staging_env
         run: terraform plan -out test.tfplan
       - name: 'Apply plan'
-        working-directory: ./staging
+        working-directory: ./staging_env
         run: terraform apply test.tfplan
       - name: Save outputs
         id: terraform
-        working-directory: ./staging
+        working-directory: ./staging_env
         run: |
           POSTGRES_SERVER=$(terraform output -raw postgres_server)
           postgres_server_encrypted=$(echo -n "$POSTGRES_SERVER" | gpg --symmetric --armor --cipher-algo AES256 --batch --passphrase "$SECRET" | base64 | tr -d '\n')
@@ -151,14 +151,14 @@ jobs:
     - name: 'Terraform Setup'
       uses: hashicorp/setup-terraform@v1
     - name: 'Initialize Terraform'
-      working-directory: ./staging
+      working-directory: ./staging_env
       run: terraform init
     - name: 'Get state'
-      working-directory: ./staging
+      working-directory: ./staging_env
       run: terraform plan -refresh-only
     - name: 'Make plan'
-      working-directory: ./staging
+      working-directory: ./staging_env
       run: terraform plan -destroy -out test.tfplan
     - name: 'Apply plan'
-      working-directory: ./staging
+      working-directory: ./staging_env
       run: terraform apply test.tfplan
