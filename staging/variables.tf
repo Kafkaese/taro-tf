@@ -8,10 +8,6 @@ variable "resource_group_name" {
   description = "The resource group name."
 }
 
-variable "storage_account_name" {
-  default = "tarostagingstorage"
-}
-
 variable "postgres_prefix" {
     default = "staging-postgres-server"
   
