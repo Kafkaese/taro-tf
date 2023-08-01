@@ -8,7 +8,6 @@ variable "resource_group_name" {
   description = "The resource group name."
 }
 
-
 variable "container_registry_name" {
   default = "tarostagingregistry"
   description = "Name of container registry"

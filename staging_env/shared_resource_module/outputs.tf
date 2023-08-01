@@ -17,3 +17,12 @@ output "acr" {
 output "acr-login" {
   value = azurerm_container_registry.container-registry.login_server
 }
+
+output "acr-user" {
+  value = azurerm_container_registry.container-registry.admin_username
+}
+
+output "acr-password" {
+  value = azurerm_container_registry.container-registry.admin_password
+  sensitive = true
+}
