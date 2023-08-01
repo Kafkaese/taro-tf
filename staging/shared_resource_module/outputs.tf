@@ -12,3 +12,8 @@ output "rg-location" {
 output "acr" {
   value = azurerm_container_registry.container-registry.name
 }
+
+# Login server for the container registry
+output "acr-login" {
+  value = azurerm_container_registry.container-registry.login_server
+}
