@@ -1,6 +1,10 @@
-resource "azurerm_resource_group" "rg" {
-  location = var.resource_group_location
-  name     = var.resource_group_name
+# Import shared resource module
+module "shared-resources" {
+  source = "./shared_resource_module"
+
+  resource_group_name = var.resource_group_name
+  resource_group_location = var.resource_group_location
+  container_registry_name = var.container_registry_name
 }
 
 # Random id for pg server
@@ -9,10 +13,11 @@ resource "random_id" "pg-server-id" {
     prefix = var.postgres_prefix
 } 
 
+/*
 resource "azurerm_postgresql_flexible_server" "pg-server" {
   name = "${lower(random_id.pg-server-id.hex)}"
-  location = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
+  location = module.shared-resources.rg-location
+  resource_group_name = module.shared-resources.rg-name
   sku_name = "B_Standard_B1ms"
   storage_mb = 32768
   version = 11
@@ -35,10 +40,4 @@ resource "azurerm_postgresql_flexible_server_database" "pg-db" {
   charset = "UTF8"
   collation = "en_US.utf8"
 }
-
-resource "azurerm_container_registry" "container-registry" {
-  name                = var.container_registry_name
-  resource_group_name = azurerm_resource_group.rg.name
-  location            = azurerm_resource_group.rg.location
-  sku                 = "Basic"
-}
+*/
