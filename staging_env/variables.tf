@@ -8,6 +8,7 @@ variable "resource_group_name" {
   description = "The resource group name."
 }
 
+/*
 variable "postgres_prefix" {
     default = "staging-postgres-server"
   
@@ -26,7 +27,17 @@ variable "postgres_password" {
 variable "postgres_database" {
   default = "taro-staging-db"
 }
-
+*/
 variable "container_registry_name" {
   default = "tarostagingregistry"
+}
+
+variable "container_registry_user" {
+  default = "admin"
+  sensitive = true
+}
+
+variable "container_registry_password" {
+  default = "secret"
+  sensitive = true
 }
