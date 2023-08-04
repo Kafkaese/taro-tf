@@ -1,5 +1,6 @@
 name: Staging
 
+# Is triggered manually at this point
 on: 
   workflow_dispatch
 
@@ -7,12 +8,14 @@ permissions:
   id-token: write
   contents: read
 
+# Only one instance of hisn wirkflow can run at the time because of azure resources
 concurrency: staging_environment
 
 env: 
   ENV: staging
 
 jobs:
+  # Sets up staging environemnt on Azure with Terraform
   tf-setup:
     name: 'Provision staging environment'
     runs-on: ubuntu-latest
@@ -47,6 +50,8 @@ jobs:
       - name: 'Apply plan'
         working-directory: ./staging_env
         run: terraform apply test.tfplan
+
+        # Since postgres server has a ranodm name, it needs to be passed to the other workflows 
       - name: Save outputs
         id: terraform
         working-directory: ./staging_env
@@ -58,7 +63,7 @@ jobs:
           echo 'a'
           cat $GITHUB_OUTPUT
 
-          
+  # Triggers staging workflow in taro-map repo to deploy frontend to the saging env
   deploy-frontend:
     name: 'Deploy Frontend'
     needs: [tf-setup]
@@ -80,7 +85,7 @@ jobs:
             workflow: staging.yaml
             workflow_timeout_seconds: 120
       
-
+        # Waits for triggeredm workflow in taro-map to finish before continuing
         - name: Wait for Deployment Workflow in Frontend Repository
           id: wait
           run: |
@@ -92,6 +97,7 @@ jobs:
               false
             fi
 
+  # Triggers staging workflow in taro-data to deply backend to staging env
   deploy-backend:
     name: 'Deploy Backend'
     needs: [tf-setup, deploy-frontend]
@@ -104,6 +110,7 @@ jobs:
         TF_VAR_postgres_password: ${{ secrets.TF_VAR_postgres_password }}
 
     steps:
+        # Postgres server name needs to be passed to the target workflow in JSON
         - name: 'Format postgres host for json'
           run: |
             echo ${{ needs.tf-setup.outputs.sql-server-encrypted }}
@@ -132,7 +139,8 @@ jobs:
             if [[ $(curl -s -X GET -u "$PAT" https://api.github.com/repos/Kafkaese/taro-data/actions/runs/${{steps.return_dispatch.outputs.run_id}} | jq '.conclusion') != '"success"' ]]; then
               false
             fi
-
+  
+  # No matter what the outcome of the previous jobs, destroy short-lived staging environment in the end
   tf-destroy:
     name: 'Destroy staging environment'
     if: ${{ always() }}
