@@ -20,7 +20,7 @@ jobs:
     name: 'Provision staging environment'
     runs-on: ubuntu-latest
     outputs:
-      sql-server-encrypted: ${{ steps.terraform.outputs.sql_server_encrypted }}
+      postgres_server: ${{ steps.terraform.outputs.POSTGRES_SERVER }}
     environment: staging
     env:
         ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
@@ -57,10 +57,7 @@ jobs:
         working-directory: ./staging_env
         run: |
           POSTGRES_SERVER=$(terraform output -raw postgres_server)
-          postgres_server_encrypted=$(echo -n "$POSTGRES_SERVER" | gpg --symmetric --armor --cipher-algo AES256 --batch --passphrase "$SECRET" | base64 | tr -d '\n')
-          echo $postgres_server_encrypted
-          echo "sql_server_encrypted=$postgres_server_encrypted" >> $GITHUB_OUTPUT
-          echo 'a'
+          echo "POSTGRES_SERVER=$POSTGRES_SERVER" >> $GITHUB_OUTPUT
           cat $GITHUB_OUTPUT
 
   # Triggers staging workflow in taro-map repo to deploy frontend to the saging env
@@ -71,7 +68,6 @@ jobs:
     environment: staging
     env: 
         PAT: ${{ secrets.GHP }}
-        ACR_LOGIN: ${{ needs.tf-setup.outputs.sql_server_encrypted }}
 
     steps:
         - name: Dispatch an action and get the run ID
@@ -113,8 +109,8 @@ jobs:
         # Postgres server name needs to be passed to the target workflow in JSON
         - name: 'Format postgres host for json'
           run: |
-            echo ${{ needs.tf-setup.outputs.sql-server-encrypted }}
-            echo "POSTGRES_HOST=\"${{ needs.tf-setup.outputs.sql-server-encrypted }}\"" >> "$GITHUB_ENV"
+            echo ${{ needs.tf-setup.outputs.postgres_server }}
+            echo "POSTGRES_HOST=\"${{ needs.tf-setup.outputs.postgres_server }}\"" >> "$GITHUB_ENV"
             echo "${{ env.POSTGRES_HOST }}"
             cat $GITHUB_ENV
         - name: Dispatch an action and get the run ID
