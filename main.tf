@@ -14,6 +14,14 @@ resource "azurerm_postgresql_flexible_server" "pg-server" {
   administrator_password = var.postgres_password
 }
 
+# Firewall rule for the postgres server !!! currently open to all IP addresses
+resource "azurerm_postgresql_flexible_server_firewall_rule" "pg-server-open" {
+  name                = "allpublic"
+  server_id           = azurerm_postgresql_flexible_server.pg-server.id
+  start_ip_address    = "0.0.0.0"
+  end_ip_address      = "255.255.255.255"
+}
+
 resource "azurerm_postgresql_flexible_server_database" "pg-db" {
   name = var.postgres_database
   server_id = azurerm_postgresql_flexible_server.pg-server.id

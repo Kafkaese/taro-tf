@@ -1,5 +1,6 @@
 name: Staging
 
+# Is triggered manually at this point
 on: 
   workflow_dispatch
 
@@ -7,26 +8,25 @@ permissions:
   id-token: write
   contents: read
 
+# Only one instance of hisn wirkflow can run at the time because of azure resources
 concurrency: staging_environment
 
 env: 
   ENV: staging
 
 jobs:
+  # Sets up staging environemnt on Azure with Terraform
   tf-setup:
     name: 'Provision staging environment'
     runs-on: ubuntu-latest
     outputs:
-      sql-server-encrypted: ${{ steps.terraform.outputs.sql_server_encrypted }}
+      postgres_server: ${{ steps.terraform.outputs.POSTGRES_SERVER }}
     environment: staging
     env:
         ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
         ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
         ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
         ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
-        TF_VAR_postgres_user: ${{ secrets.TF_VAR_postgres_user }}
-        TF_VAR_postgres_password: ${{ secrets.TF_VAR_postgres_password }}
-        SECRET: ${{ secrets.PGP_SECRET_SIGNING_PASSPHRASE }}
     
     steps:
       - name: Checkout
@@ -36,22 +36,110 @@ jobs:
         with:
           terraform_wrapper: false
       - name: 'Initialize Terraform'
-        working-directory: ./staging
+        working-directory: ./staging_env
         run: terraform init
       - name: 'Get state'
-        working-directory: ./staging
+        working-directory: ./staging_env
         run: terraform plan -refresh-only
       - name: 'Make plan'
-        working-directory: ./staging
+        working-directory: ./staging_env
         run: terraform plan -out test.tfplan
       - name: 'Apply plan'
-        working-directory: ./staging
+        working-directory: ./staging_env
         run: terraform apply test.tfplan
-      - name: Save outputs
-        id: terraform
-        working-directory: ./staging
-        run: |
-          POSTGRES_SERVER=$(terraform output -raw postgres_server)
-          postgres_server_encrypted=$(gpg --symmetric --batch --passphrase "$SECRET" --output - <(echo "$POSTGRES_SERVER") | base64 -w0)
-          echo "sql_server_encrypted=$postgres_server_encrypted" >> $GITHUB_OUTPUT
 
+
+  # Triggers staging workflow in taro-map repo to deploy frontend to the saging env
+  deploy-frontend:
+    name: 'Deploy Frontend'
+    needs: [tf-setup]
+    runs-on: ubuntu-latest
+    environment: staging
+    env: 
+        PAT: ${{ secrets.GHP }}
+
+    steps:
+        - name: Dispatch an action and get the run ID
+          uses: codex-/return-dispatch@v1
+          id: return_dispatch
+          with:
+            token: ${{ secrets.GHP_RAW }}
+            ref: refs/heads/staging
+            repo: taro-map
+            owner: Kafkaese
+            workflow: staging.yaml
+            workflow_timeout_seconds: 120
+      
+        # Waits for triggeredm workflow in taro-map to finish before continuing
+        - name: Wait for Deployment Workflow in Frontend Repository
+          id: wait
+          run: |
+            echo "Waiting for frontend deployment to complete..."
+            until [[ $(curl -s -X GET -u "$PAT" https://api.github.com/repos/Kafkaese/taro-map/actions/runs/${{steps.return_dispatch.outputs.run_id}} | jq '.status') == '"completed"' ]]; do
+              sleep 10
+            done
+            if [[ $(curl -s -X GET -u "$PAT" https://api.github.com/repos/Kafkaese/taro-map/actions/runs/${{steps.return_dispatch.outputs.run_id}} | jq '.conclusion') != '"success"' ]]; then
+              false
+            fi
+
+  # Triggers staging workflow in taro-data to deply backend to staging env
+  deploy-backend:
+    name: 'Deploy Backend'
+    needs: [tf-setup, deploy-frontend]
+    runs-on: ubuntu-latest
+    environment: staging
+    env: 
+        PAT: ${{ secrets.GHP }}
+
+    steps:
+        - name: Dispatch an action and get the run ID
+          uses: codex-/return-dispatch@v1
+          id: return_dispatch
+          with:
+            token: ${{ secrets.GHP_RAW }}
+            ref: refs/heads/staging
+            repo: taro-data
+            owner: Kafkaese
+            workflow: staging.yaml
+            workflow_timeout_seconds: 120
+        - name: Wait for Deployment Workflow in Frontend Repository
+          id: wait
+          run: |
+            echo "Waiting for frontend deployment to complete..."
+            until [[ $(curl -s -X GET -u "$PAT" https://api.github.com/repos/Kafkaese/taro-data/actions/runs/${{steps.return_dispatch.outputs.run_id}} | jq '.status') == '"completed"' ]]; do
+              sleep 10
+            done
+            if [[ $(curl -s -X GET -u "$PAT" https://api.github.com/repos/Kafkaese/taro-data/actions/runs/${{steps.return_dispatch.outputs.run_id}} | jq '.conclusion') != '"success"' ]]; then
+              false
+            fi
+  
+  # No matter what the outcome of the previous jobs, destroy short-lived staging environment in the end
+  tf-destroy:
+    name: 'Destroy staging environment'
+    if: ${{ always() }}
+    needs: [tf-setup, deploy-frontend, deploy-backend]
+    runs-on: ubuntu-latest
+    environment: staging
+    env:
+        ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+        ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+        ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+        ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+    - name: 'Terraform Setup'
+      uses: hashicorp/setup-terraform@v1
+    - name: 'Initialize Terraform'
+      working-directory: ./staging_env
+      run: terraform init
+    - name: 'Get state'
+      working-directory: ./staging_env
+      run: terraform plan -refresh-only
+    - name: 'Make plan'
+      working-directory: ./staging_env
+      run: terraform plan -destroy -out test.tfplan
+    - name: 'Apply plan'
+      working-directory: ./staging_env
+      run: terraform apply test.tfplan
