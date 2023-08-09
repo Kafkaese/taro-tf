@@ -1,11 +1,22 @@
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 import time
+import os
+
+# Configure Firefox options for headless mode
+firefox_options = webdriver.FirefoxOptions()
+firefox_options.add_argument('--headless')
+
+# Path for logs
+log_path = os.environ['LOG_PATH'] + '/geckodriver.log'
+
+# App url
+url = f"{os.environ['REACT_HOST']}:{os.environ['REACT_PORT']}"
 
 def test_zoom_in():
     # Open app
-    driver = webdriver.Firefox()
-    url = 'localhost:3000'  # Replace with the desired website URL
+    driver = webdriver.Firefox(options=firefox_options)
+     # Replace with the desired website URL
     driver.get(url)
 
     # Wait for app to load
