@@ -66,7 +66,7 @@ def test_hover_toolip_data():
         print(f"Error: {e}")
         
     
-    # Check country name
+    # Check country name and data
     assert container.find_element(By.TAG_NAME, 'h3').text == "Afghanistan"
     assert container.find_element(By.CLASS_NAME, 'money').text != "no data"
     assert container.find_element(By.CLASS_NAME, 'money-label').text != ""
