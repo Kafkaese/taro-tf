@@ -34,9 +34,9 @@ def test_hover_toolip():
         print(f"Error: {e}")
 
     
-    # Hover over random country
+    # Hover over France
     try:
-        geography = driver.find_element(By.CLASS_NAME, 'rsm-geography')
+        geography = driver.find_elements(By.CLASS_NAME, 'rsm-geography')[56]
         actions = ActionChains(driver)
         actions.move_to_element(geography).perform()
     except Exception as e:
@@ -47,6 +47,12 @@ def test_hover_toolip():
     container = driver.find_element(By.CLASS_NAME, 'hover-box-container')
     assert container != None
     
+    # Check country name
+    assert container.find_element(By.TAG_NAME, 'h3').text == "France"
+    assert container.find_element(By.CLASS_NAME, 'money').text != "no data"
+    assert container.find_element(By.CLASS_NAME, 'money-label').text != ""
+    
+    # quit webdriver
     driver.quit()
     
 if __name__ == '__main__':
