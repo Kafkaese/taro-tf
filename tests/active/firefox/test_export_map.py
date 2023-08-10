@@ -88,18 +88,16 @@ def test_hover_toolip_data():
     try:
         wait = WebDriverWait(driver, 10)
         container = wait.until(EC.visibility_of_element_located((By.CLASS_NAME, 'hover-box-container')))
+        
+        # Check country name and data
+        assert container.find_element(By.TAG_NAME, 'h3').text == "France"
+        assert container.find_element(By.CLASS_NAME, 'money').text != "no data"
+        assert container.find_element(By.CLASS_NAME, 'money-label').text != ""
+    
     except Exception as e:
         print(f"Error: {e}")
-        
-    
-    # Check country name and data
-    assert container.find_element(By.TAG_NAME, 'h3').text == "France"
-    assert container.find_element(By.CLASS_NAME, 'money').text != "no data"
-    assert container.find_element(By.CLASS_NAME, 'money-label').text != ""
-    
-    
     
     driver.quit()
     
 if __name__ == '__main__':
-    test_hover_toolip()
+    test_hover_toolip_data()
