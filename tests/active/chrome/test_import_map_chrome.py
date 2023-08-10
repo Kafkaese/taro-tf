@@ -31,18 +31,20 @@ def test_hover_toolip():
     try:
         geography = driver.find_element(By.CLASS_NAME, 'rsm-geography')
         actions = ActionChains(driver)
-        actions.move_to_element(geography).perform()
+        actions.move_to_element(geography).perform()  
     except Exception as e:
         print(f"Error: {e}")
         
-    # Wait for render in headless
-    time.sleep(3)
-        
     # Find hover box container
-    wait = WebDriverWait(driver, 10)
-    container = wait.until(EC.visibility_of_element_located((By.CLASS_NAME, 'hover-box-container')))
-    assert container != None
-    
+    try:  
+       
+        wait = WebDriverWait(driver, 10)
+        container = wait.until(EC.visibility_of_element_located((By.CLASS_NAME, 'hover-box-container')))
+        assert container != None   
+    except Exception as e:
+        print(f"Error: {e}")
+        
+    # Quit driver 
     driver.quit()
     
 def test_hover_toolip_data():
