@@ -4,3 +4,6 @@
 *.lock.hcl
 *.tfstate
 *.tfstate.backup
+
+# python
+**/__pycache__
