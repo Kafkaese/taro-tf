@@ -25,7 +25,7 @@ def test_hover_toolip():
     # Wait for app to load
     time.sleep(1)
     
-    # Hover over random country
+    # Hover over Afhganistan
     try:
         geography = driver.find_element(By.CLASS_NAME, 'rsm-geography')
         actions = ActionChains(driver)
