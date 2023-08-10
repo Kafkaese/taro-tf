@@ -1,6 +1,8 @@
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.action_chains import ActionChains
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 import time
 import os
 
@@ -33,9 +35,12 @@ def test_hover_toolip():
     except Exception as e:
         print(f"Error: {e}")
         
+    # Wait for render in headless
+    time.sleep(3)
+        
     # Find hover box container
-    time.sleep(1)
-    container = driver.find_element(By.CLASS_NAME, 'hover-box-container')
+    wait = WebDriverWait(driver, 10)
+    container = wait.until(EC.visibility_of_element_located((By.CLASS_NAME, 'hover-box-container')))
     assert container != None
     
     driver.quit()
@@ -61,7 +66,8 @@ def test_hover_toolip_data():
     # Find hover box container
     time.sleep(1)
     try:
-        container = driver.find_element(By.CLASS_NAME, 'hover-box-container')
+        wait = WebDriverWait(driver, 10)
+        container = wait.until(EC.visibility_of_element_located((By.CLASS_NAME, 'hover-box-container')))
     except Exception as e:
         print(f"Error: {e}")
         
