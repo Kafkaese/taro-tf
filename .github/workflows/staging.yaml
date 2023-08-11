@@ -54,6 +54,8 @@ jobs:
     name: 'Deploy Frontend'
     needs: [tf-setup]
     runs-on: ubuntu-latest
+    outputs:
+      frontend-url: ${{ steps.artifact.outputs.FRONTEND_URL}}
     environment: staging
     env: 
         PAT: ${{ secrets.GHP }}
@@ -81,6 +83,15 @@ jobs:
             if [[ $(curl -s -X GET -u "$PAT" https://api.github.com/repos/Kafkaese/taro-map/actions/runs/${{steps.return_dispatch.outputs.run_id}} | jq '.conclusion') != '"success"' ]]; then
               false
             fi
+        - name: 'Download frontend url from artifacts'
+          id: artifact
+          run: |
+            URL=$(curl -H "Authorization: Bearer $PAT" \
+            -H "Accept: application/vnd.github.v3.raw" \
+            -o url.txt \
+            -L https://api.github.com/repos/Kafkaese/taro-map/actions/runs/${{steps.return_dispatch.outputs.run_id}}/artifacts)
+            echo "FRONTEND_URL=$URL" >> "$GITHUB_OUTPUT"
+
 
   # Triggers staging workflow in taro-data to deply backend to staging env
   deploy-backend:
@@ -119,8 +130,8 @@ jobs:
     runs-on: ubuntu-latest
     environment: staging
     env:
-      REACT_HOST: a
-      REACT_PORT: b
+      REACT_HOST: ${{ needs.deploy-frontend.outputs.frontend-url }}
+      REACT_PORT: 3000
 
     steps:
       - name: 'Checkout repo'
