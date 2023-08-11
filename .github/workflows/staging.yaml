@@ -147,7 +147,7 @@ jobs:
   tf-destroy:
     name: 'Destroy staging environment'
     if: ${{ always() }}
-    needs: [tf-setup, deploy-frontend, deploy-backend]
+    needs: [tf-setup, deploy-frontend, deploy-backend, end-to-end]
     runs-on: ubuntu-latest
     environment: staging
     env:
