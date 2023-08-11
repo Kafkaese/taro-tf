@@ -113,6 +113,25 @@ jobs:
               false
             fi
   
+  end-to-end:
+    name: 'Run end-to-end tests'
+    needs: [deploy-backend, deploy-frontend]
+    runs-on: ubuntu-latest
+    environment: staging
+    env:
+      REACT_HOST: a
+      REACT_PORT: b
+
+    steps:
+      - name: 'Checkout repo'
+        uses: actions/checkout@v3
+      - name: 'Install packages'
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: 'Run end-to-end tests with pytest'
+        run: pytest tests/active
+
   # No matter what the outcome of the previous jobs, destroy short-lived staging environment in the end
   tf-destroy:
     name: 'Destroy staging environment'
