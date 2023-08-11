@@ -54,6 +54,8 @@ jobs:
     name: 'Deploy Frontend'
     needs: [tf-setup]
     runs-on: ubuntu-latest
+    outputs:
+      frontend-url: ${{ steps.artifact.outputs.FRONTEND_URL}}
     environment: staging
     env: 
         PAT: ${{ secrets.GHP }}
@@ -81,6 +83,15 @@ jobs:
             if [[ $(curl -s -X GET -u "$PAT" https://api.github.com/repos/Kafkaese/taro-map/actions/runs/${{steps.return_dispatch.outputs.run_id}} | jq '.conclusion') != '"success"' ]]; then
               false
             fi
+        - name: 'Download frontend url from artifacts'
+          id: artifact
+          run: |
+            URL=$(curl -H "Authorization: Bearer $PAT" \
+            -H "Accept: application/vnd.github.v3.raw" \
+            -o url.txt \
+            -L https://api.github.com/repos/Kafkaese/taro-map/actions/runs/${{steps.return_dispatch.outputs.run_id}}/artifacts)
+            echo "FRONTEND_URL=$URL" >> "$GITHUB_OUTPUT"
+
 
   # Triggers staging workflow in taro-data to deply backend to staging env
   deploy-backend:
@@ -113,6 +124,25 @@ jobs:
               false
             fi
   
+  end-to-end:
+    name: 'Run end-to-end tests'
+    needs: [deploy-backend, deploy-frontend]
+    runs-on: ubuntu-latest
+    environment: staging
+    env:
+      REACT_HOST: ${{ needs.deploy-frontend.outputs.frontend-url }}
+      REACT_PORT: 3000
+
+    steps:
+      - name: 'Checkout repo'
+        uses: actions/checkout@v3
+      - name: 'Install packages'
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: 'Run end-to-end tests with pytest'
+        run: pytest tests/active
+
   # No matter what the outcome of the previous jobs, destroy short-lived staging environment in the end
   tf-destroy:
     name: 'Destroy staging environment'

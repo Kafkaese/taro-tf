@@ -4,3 +4,8 @@
 *.lock.hcl
 *.tfstate
 *.tfstate.backup
+
+# python
+**/__pycache__
+*.log
+**/selenium_log.txt
