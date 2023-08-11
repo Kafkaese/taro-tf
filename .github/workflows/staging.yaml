@@ -132,6 +132,7 @@ jobs:
     env:
       REACT_HOST: ${{ needs.deploy-frontend.outputs.frontend-url }}
       REACT_PORT: 3000
+      LOG_PATH: '.'
 
     steps:
       - name: 'Checkout repo'
