@@ -86,11 +86,12 @@ jobs:
         - name: 'Download frontend url from artifacts'
           id: artifact
           run: |
-            URL=$(curl -H "Authorization: Bearer $PAT" \
+            curl -H "Authorization: Bearer $PAT" \
             -H "Accept: application/vnd.github.v3.raw" \
             -o url.txt \
-            -L https://api.github.com/repos/Kafkaese/taro-map/actions/runs/${{steps.return_dispatch.outputs.run_id}}/artifacts)
-            echo "FRONTEND_URL=$URL" >> "$GITHUB_OUTPUT"
+            -L https://api.github.com/repos/Kafkaese/taro-map/actions/runs/${{steps.return_dispatch.outputs.run_id}}/artifacts > artifact.zip
+            unzip artifact.zip
+            echo "FRONTEND_URL=$(cat url.txt)" >> "$GITHUB_OUTPUT"
 
 
   # Triggers staging workflow in taro-data to deply backend to staging env
