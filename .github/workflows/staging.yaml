@@ -90,6 +90,8 @@ jobs:
             -H "Accept: application/vnd.github.v3.raw" \
             -o url.txt \
             -L https://api.github.com/repos/Kafkaese/taro-map/actions/runs/${{steps.return_dispatch.outputs.run_id}}/artifacts > artifact.zip
+            ls -A
+            file artifact.zip
             unzip artifact.zip
             echo "FRONTEND_URL=$(cat url.txt)" >> "$GITHUB_OUTPUT"
 
