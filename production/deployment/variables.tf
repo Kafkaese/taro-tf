@@ -38,8 +38,8 @@ variable "environment" {
   default = "staging"
 }
 
-variable "postgres_prefix" {
-  default = "taro-staging-server"
+variable "postgres_server_name" {
+  default = "taro-postgresql-server"
 }
 
 variable "postgres_port" {

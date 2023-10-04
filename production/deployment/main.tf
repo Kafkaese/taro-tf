@@ -9,9 +9,9 @@ resource "azurerm_container_registry" "container-registry" {
 
 # Postgres server
 resource "azurerm_postgresql_flexible_server" "pg-server" {
-  name = "${lower(random_id.pg-server-id.hex)}"
-  location = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
+  name = var.postgres_server_name
+  location = var.resource_group_location
+  resource_group_name = var.resource_group_name
   sku_name = "B_Standard_B1ms"
   storage_mb = 32768
   version = 11
