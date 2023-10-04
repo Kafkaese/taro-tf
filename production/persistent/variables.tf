@@ -9,5 +9,5 @@ variable "resource_group_name" {
 }
 
 variable "acr_name" {
-  default = "taro-container-registry"
+  default = "taroContainerRegistry"
 }
