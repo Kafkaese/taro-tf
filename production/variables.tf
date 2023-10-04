@@ -21,3 +21,7 @@ variable "postgres_password" {
 variable "postgres_database" {
   default = "taro-db"
 }
+
+variable "acr_name" {
+  default = "taro-container-registry"
+}
