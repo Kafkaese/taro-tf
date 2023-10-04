@@ -4,12 +4,12 @@ variable "resource_group_location" {
 }
 
 variable "resource_group_name" {
-  default     = "taro-staging"
+  default     = "taro"
   description = "The resource group name."
 }
 
 variable "container_registry_name" {
-  default = "tarostagingregistry"
+  default = "taroContainerRegistry"
 }
 
 variable "image_registry_credential_user" {
