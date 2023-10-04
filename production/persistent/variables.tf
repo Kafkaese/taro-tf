@@ -23,5 +23,5 @@ variable "postgres_database" {
 }
 
 variable "acr_name" {
-  default = "taro-container-registry"
+  default = "taro-container-registry  "
 }
