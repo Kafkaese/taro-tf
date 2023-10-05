@@ -27,7 +27,7 @@ resource "azurerm_postgresql_flexible_server_firewall_rule" "pg-server-open" {
   end_ip_address      = "255.255.255.255"
 }
 
-/*
+
 # Container Instance for the frontend
 resource "azurerm_container_group" "container-instance" {
   name                = var.instance_name
@@ -37,14 +37,14 @@ resource "azurerm_container_group" "container-instance" {
   os_type             = "Linux"
 
   image_registry_credential {
-    username = var.image_registry_credential_user
-    password = var.image_registry_credential_password
-    server   = azurerm_container_registry.container-registry.login_server
+    username = var.container_registry_credential_user
+    password = var.container_registry_credential_password
+    server   = var.container_registry_login_server
   }
 
   container {
     name   = "taro-frontend"
-    image  = "${var.image_registry_login_server}/taro:frontend"
+    image  = "${var.container_registry_login_server}/taro:frontend"
     cpu    = "0.5"
     memory = "1.5"
     environment_variables = {
@@ -61,7 +61,7 @@ resource "azurerm_container_group" "container-instance" {
     environment = var.environment
   }
 }
-*/
+
 
 # Container Instance for the api
 resource "azurerm_container_group" "container-instance-api" {
