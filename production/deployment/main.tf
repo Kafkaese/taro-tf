@@ -1,12 +1,3 @@
-# Container regsitry for all containers in the production environemtn (api, frontend and pipeline)
-resource "azurerm_container_registry" "container-registry" {
-  name                = var.container_registry_name
-  
-  resource_group_name = var.resource_group_name
-  location            = var.resource_group_location
-  sku                 = "Basic"
-}
-
 # Postgres server
 resource "azurerm_postgresql_flexible_server" "pg-server" {
   name = var.postgres_server_name
@@ -70,6 +61,7 @@ resource "azurerm_container_group" "container-instance" {
     environment = var.environment
   }
 }
+*/
 
 # Container Instance for the api
 resource "azurerm_container_group" "container-instance-api" {
@@ -80,14 +72,14 @@ resource "azurerm_container_group" "container-instance-api" {
   os_type             = "Linux"
 
   image_registry_credential {
-    username = var.image_registry_credential_user
-    password = var.image_registry_credential_password
-    server   = azurerm_container_registry.container-registry.login_server
+    username = var.container_registry_credential_user
+    password = var.container_registry_credential_password
+    server   = var.container_registry_login_server
   }
 
   container {
     name   = "taro-api"
-    image  = "${var.image_registry_login_server}/taro:api"
+    image  = "${var.container_registry_login_server}/taro:api"
     cpu    = "0.5"
     memory = "1.5"
     environment_variables = {
@@ -104,7 +96,6 @@ resource "azurerm_container_group" "container-instance-api" {
     environment = var.environment
   }
 }
-*/
 
 
 
