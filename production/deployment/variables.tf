@@ -12,30 +12,28 @@ variable "container_registry_name" {
   default = "taroContainerRegistry"
 }
 
-variable "image_registry_credential_user" {
-  default = "admin"
+variable "container_registry_login_server" {
+  default = "tarocontainerregistry.azurecr.io"
+}
+
+variable "container_registry_credential_user" {
   sensitive = true
 }
 
-variable "image_registry_credential_password" {
-  default = "secret"
+variable "container_registry_credential_password" {
   sensitive = true
-}
-
-variable "image_registry_login_server" {
-  default = "tarostagingregistry.azurecr.io"
 }
 
 variable "instance_name" {
-  default = "taro-staging-frontend"
+  default = "taro-frontend"
 }
 
 variable "instance_name_api" {
-  default = "taro-staging-api"
+  default = "taro-api"
 }
 
 variable "environment" {
-  default = "staging"
+  default = "production"
 }
 
 variable "postgres_server_name" {
@@ -57,6 +55,6 @@ variable "postgres_password" {
 }
 
 variable "postgres_database" {
-  default = "taro-staging-db"
+  default = "taro-db"
 }
 
