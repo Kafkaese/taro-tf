@@ -8,6 +8,6 @@ variable "resource_group_name" {
   description = "The resource group name."
 }
 
-variable "acr_name" {
+variable "container_registry_name" {
   default = "taroContainerRegistry"
 }
