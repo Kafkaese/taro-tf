@@ -36,7 +36,7 @@ resource "azurerm_postgresql_flexible_server_firewall_rule" "pg-server-open" {
 
 
 # Container Instance for the frontend
-resource "azurerm_container_group" "container-instance" {
+resource "azurerm_container_group" "container-instance-frontend" {
   name                = var.instance_name
   location            = var.resource_group_location
   resource_group_name = var.resource_group_name
