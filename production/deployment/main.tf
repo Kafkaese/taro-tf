@@ -97,6 +97,12 @@ resource "azurerm_container_group" "container-instance-api" {
     memory = "1.5"
     environment_variables = {
       ENV=var.environment
+      POSTGRES_HOST=azurerm_postgresql_flexible_server.pg-server.fqdn
+      POSTGRES_PORT=var.postgres_port
+      POSTGRES_DB=var.postgres_database
+      POSTGRES_USER=var.postgres_user
+      POSTGRES_PASSWORD=var.postgres_password
+      LOG_PATH="./Log"
     }
 
     ports {
@@ -107,6 +113,12 @@ resource "azurerm_container_group" "container-instance-api" {
 
   tags = {
     environment = var.environment
+  }
+
+  lifecycle {
+    replace_triggered_by = [
+      null_resource.always_run
+    ]
   }
 }
 
