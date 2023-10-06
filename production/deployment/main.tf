@@ -1,3 +1,10 @@
+# Null resource to trigger redeploy on container instances
+resource "null_resource" "always_run" {
+  triggers = {
+    timestamp = "${timestamp()}"
+  }
+}
+
 # Postgres server
 resource "azurerm_postgresql_flexible_server" "pg-server" {
   name = var.postgres_server_name
@@ -59,6 +66,12 @@ resource "azurerm_container_group" "container-instance" {
 
   tags = {
     environment = var.environment
+  }
+
+  lifecycle {
+    replace_triggered_by = [
+      null_resource.always_run
+    ]
   }
 }
 
