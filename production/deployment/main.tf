@@ -37,7 +37,7 @@ resource "azurerm_postgresql_flexible_server_firewall_rule" "pg-server-open" {
 
 # Container Instance for the frontend
 resource "azurerm_container_group" "container-instance-frontend" {
-  name                = var.instance_name
+  name                = var.container_group_name_frontend
   location            = var.resource_group_location
   resource_group_name = var.resource_group_name
   ip_address_type     = "Public"
@@ -78,7 +78,7 @@ resource "azurerm_container_group" "container-instance-frontend" {
 
 # Container Instance for the api
 resource "azurerm_container_group" "container-instance-api" {
-  name                = var.instance_name_api
+  name                = var.container_group_name_api
   location            = var.resource_group_location
   resource_group_name = var.resource_group_name
   ip_address_type     = "Public"

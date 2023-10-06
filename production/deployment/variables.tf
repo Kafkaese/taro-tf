@@ -24,11 +24,11 @@ variable "container_registry_credential_password" {
   sensitive = true
 }
 
-variable "instance_name" {
+variable "container_group_name_frontend" {
   default = "taro-frontend"
 }
 
-variable "instance_name_api" {
+variable "container_group_name_api" {
   default = "taro-api"
 }
 
