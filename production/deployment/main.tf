@@ -59,7 +59,7 @@ resource "azurerm_container_group" "container-instance-frontend" {
     }
 
     ports {
-      port     = 3000
+      port     = 80
       protocol = "TCP"
     }
   }
