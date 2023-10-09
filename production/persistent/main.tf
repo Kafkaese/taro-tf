@@ -28,3 +28,15 @@ resource "azurerm_storage_container" "production-backend" {
   storage_account_name  = azurerm_storage_account.storage.name
   container_access_type = "private"
 }
+
+resource "azurerm_storage_container" "staging-backend" {
+  name                  = "terraform-staging-env"
+  storage_account_name  = azurerm_storage_account.storage.name
+  container_access_type = "private"
+}
+
+resource "azurerm_storage_container" "test-backend" {
+  name                  = "terraform-test-env"
+  storage_account_name  = azurerm_storage_account.storage.name
+  container_access_type = "private"
+}
