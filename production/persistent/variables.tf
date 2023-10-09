@@ -1,5 +1,5 @@
 variable "resource_group_location" {
-  default     = "germanywestcentral"
+  default     = "francecentral"
   description = "Location of the resource group."
 }
 
