@@ -56,6 +56,8 @@ resource "azurerm_container_group" "container-instance-frontend" {
     memory = "1.5"
     environment_variables = {
       ENV=var.environment
+      REACT_APP_API_HOST=azurerm_container_group.container-instance-api.ip_address
+      REACT_APP_API_PORT=var.api_port
     }
 
     ports {

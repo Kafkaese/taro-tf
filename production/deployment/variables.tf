@@ -58,3 +58,6 @@ variable "postgres_database" {
   default = "taro-db"
 }
 
+variable "api_port" {
+  default = "8000"
+}
