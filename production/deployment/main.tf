@@ -39,7 +39,12 @@ resource "azurerm_virtual_network" "vnet" {
   name                = "taro-production-vnet"
   location            = var.resource_group_location
   resource_group_name = var.resource_group_name
-  address_space       = ["10.0.0.0/24"]
+  address_space       = ["10.0.0.0/16"]
+
+  subnet {
+    name           = "taro-subnet"
+    address_prefix = "10.0.1.0/24"
+  }
 
   tags = {
     environment = var.environment
@@ -95,6 +100,7 @@ resource "azurerm_container_group" "container-instance-api" {
   resource_group_name = var.resource_group_name
   ip_address_type     = "Public"
   os_type             = "Linux"
+  subnet_ids = [ "taro-subnet" ]
 
   image_registry_credential {
     username = var.container_registry_credential_user
@@ -135,63 +141,6 @@ resource "azurerm_container_group" "container-instance-api" {
     }
   }
 
-  tags = {
-    environment = var.environment
-  }
-
-  lifecycle {
-    replace_triggered_by = [
-      null_resource.always_run
-    ]
-  }
-}
-
-# Container Instance for the api
-resource "azurerm_container_group" "container-instance-api" {
-  name                = var.container_group_name_api
-  location            = var.resource_group_location
-  resource_group_name = var.resource_group_name
-  ip_address_type     = "Public"
-  os_type             = "Linux"
-
-  image_registry_credential {
-    username = var.container_registry_credential_user
-    password = var.container_registry_credential_password
-    server   = var.container_registry_login_server
-  }
-
-  init_container {
-    name = "pipeline"
-    image = "${var.container_registry_login_server}/taro:pipeline"
-    environment_variables = {
-      POSTGRES_HOST=azurerm_postgresql_flexible_server.pg-server.fqdn
-      POSTGRES_PORT=var.postgres_port
-      POSTGRES_USER=var.postgres_user
-      POSTGRES_DB=var.postgres_database
-      POSTGRES_PASSWORD=var.postgres_password
-    }
-  }
-
-  container {
-    name   = "taro-api"
-    image  = "${var.container_registry_login_server}/taro:api"
-    cpu    = "0.5"
-    memory = "1.5"
-    environment_variables = {
-      ENV=var.environment
-      POSTGRES_HOST=azurerm_postgresql_flexible_server.pg-server.fqdn
-      POSTGRES_PORT=var.postgres_port
-      POSTGRES_DB=var.postgres_database
-      POSTGRES_USER=var.postgres_user
-      POSTGRES_PASSWORD=var.postgres_password
-      LOG_PATH="./Log"
-    }
-
-    ports {
-      port     = 8000
-      protocol = "TCP"
-    }
-  }
 
   tags = {
     environment = var.environment
@@ -203,8 +152,3 @@ resource "azurerm_container_group" "container-instance-api" {
     ]
   }
 }
-
-
-
-
-
