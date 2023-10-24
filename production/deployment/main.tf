@@ -26,14 +26,6 @@ resource "azurerm_postgresql_flexible_server_database" "pg-db" {
   collation = "en_US.utf8"
 }
 
-# Firewall rule for the postgres server; Only allows access from the backend container group ip
-resource "azurerm_postgresql_flexible_server_firewall_rule" "pg-server-firewall" {
-  name                = "api-access-only"
-  server_id           = azurerm_postgresql_flexible_server.pg-server.id
-  start_ip_address    = azurerm_container_group.container-instance-api.ip_address
-  end_ip_address      = azurerm_container_group.container-instance-api.ip_address
-}
-
 # Create a virtual network
 resource "azurerm_virtual_network" "taro_production_vnet" {
   name                = "taro-production-vnet"
