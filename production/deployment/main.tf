@@ -57,6 +57,22 @@ resource "azurerm_network_security_group" "taro_production_network_security_grou
   location            = var.resource_group_location
 }
 
+# Allow incoming traffic to the PostgreSQL server only from the API container
+resource "azurerm_network_security_rule" "taro_production_api_postgres_rule" {
+  name                        = "allow-api-to-postgres"
+  priority                    = 1001
+  direction                   = "Inbound"
+  access                      = "Allow"
+  protocol                    = "Tcp"
+  source_port_range           = "*"
+  destination_port_range      = 5432
+  source_address_prefix       = azurerm_container_group.container-instance-api.ip_address
+  destination_address_prefix  = azurerm_subnet.postgresql_subnet.address_prefixes[0]
+  resource_group_name         = var.resource_group_name
+  network_security_group_name = azurerm_network_security_group.taro_production_network_security_group.name
+}
+
+
 # Container Instance for the frontend
 resource "azurerm_container_group" "container-instance-frontend" {
   name                = var.container_group_name_frontend
@@ -64,7 +80,6 @@ resource "azurerm_container_group" "container-instance-frontend" {
   resource_group_name = var.resource_group_name
   ip_address_type     = "Public"
   os_type             = "Linux"
-
   image_registry_credential {
     username = var.container_registry_credential_user
     password = var.container_registry_credential_password
