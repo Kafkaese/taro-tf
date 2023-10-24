@@ -53,6 +53,7 @@ resource "azurerm_subnet" "postgresql_subnet" {
 # Create a network security group
 resource "azurerm_network_security_group" "taro_production_network_security_group" {
   name                = "taro-production-network-security-group"
+  depends_on          = [ azurerm_container_group.container-instance-api ]
   resource_group_name = var.resource_group_name
   location            = var.resource_group_location
 }
@@ -171,9 +172,4 @@ resource "azurerm_container_group" "container-instance-api" {
       null_resource.always_run
     ]
   }
-}
-
-data "azurerm_container_group" "container_instance_api" {
-  name                = azurerm_container_group.container-instance-api.name
-  resource_group_name = azurerm_container_group.container-instance-api.resource_group_name
 }
