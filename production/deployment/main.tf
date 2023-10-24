@@ -34,21 +34,20 @@ resource "azurerm_postgresql_flexible_server_firewall_rule" "pg-server-firewall"
   end_ip_address      = azurerm_container_group.container-instance-api.ip_address
 }
 
-# Virtual network
-resource "azurerm_virtual_network" "vnet" {
+# Create a virtual network
+resource "azurerm_virtual_network" "taro_production_vnet" {
   name                = "taro-production-vnet"
-  location            = var.resource_group_location
   resource_group_name = var.resource_group_name
+  location            = var.resource_group_location
   address_space       = ["10.0.0.0/16"]
+}
 
-  subnet {
-    name           = "taro-subnet"
-    address_prefix = "10.0.1.0/24"
-  }
-
-  tags = {
-    environment = var.environment
-  }
+# Define a subnet for PostgreSQL server
+resource "azurerm_subnet" "postgresql_subnet" {
+  name                 = "postgresql-subnet"
+  resource_group_name  = var.resource_group_name
+  virtual_network_name = azurerm_virtual_network.taro_production_vnet.name
+  address_prefixes     = ["10.0.1.0/24"]
 }
 
 # Container Instance for the frontend
@@ -100,7 +99,6 @@ resource "azurerm_container_group" "container-instance-api" {
   resource_group_name = var.resource_group_name
   ip_address_type     = "Public"
   os_type             = "Linux"
-  subnet_ids = [ "taro-subnet" ]
 
   image_registry_credential {
     username = var.container_registry_credential_user
@@ -151,4 +149,9 @@ resource "azurerm_container_group" "container-instance-api" {
       null_resource.always_run
     ]
   }
+}
+
+data "azurerm_container_group" "container_instance_api" {
+  name                = azurerm_container_group.container-instance-api.name
+  resource_group_name = azurerm_container_group.container-instance-api.resource_group_name
 }
