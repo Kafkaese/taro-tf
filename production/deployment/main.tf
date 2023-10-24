@@ -50,6 +50,13 @@ resource "azurerm_subnet" "postgresql_subnet" {
   address_prefixes     = ["10.0.1.0/24"]
 }
 
+# Create a network security group
+resource "azurerm_network_security_group" "taro_production_network_security_group" {
+  name                = "taro-production-network-security-group"
+  resource_group_name = var.resource_group_name
+  location            = var.resource_group_location
+}
+
 # Container Instance for the frontend
 resource "azurerm_container_group" "container-instance-frontend" {
   name                = var.container_group_name_frontend
