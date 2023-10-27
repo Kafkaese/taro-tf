@@ -10,7 +10,10 @@ resource "azurerm_postgresql_flexible_server" "pg-server" {
   name = var.postgres_server_name
   location = var.resource_group_location
   resource_group_name = var.resource_group_name
+  delegated_subnet_id    = azurerm_subnet.postgresql_subnet.id
+  private_dns_zone_id    = azurerm_private_dns_zone.taro_dns_zone.id
   sku_name = "B_Standard_B1ms"
+  depends_on = [azurerm_private_dns_zone_virtual_network_link.taro_vnete_dns_zone]
   storage_mb = 32768
   version = 11
   administrator_login = var.postgres_user
@@ -32,6 +35,18 @@ resource "azurerm_virtual_network" "taro_production_vnet" {
   resource_group_name = var.resource_group_name
   location            = var.resource_group_location
   address_space       = ["10.0.0.0/16"]
+}
+
+resource "azurerm_private_dns_zone" "taro_dns_zone" {
+  name                = "example.postgres.database.azure.com"
+  resource_group_name = var.resource_group_name
+}
+
+resource "azurerm_private_dns_zone_virtual_network_link" "taro_vnete_dns_zone" {
+  name                  = "exampleVnetZone.com"
+  private_dns_zone_name = azurerm_private_dns_zone.taro_dns_zone.name
+  virtual_network_id    = azurerm_virtual_network.taro_production_vnet.id
+  resource_group_name   = var.resource_group_name
 }
 
 # Define a subnet for PostgreSQL server
