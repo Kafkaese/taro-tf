@@ -40,7 +40,17 @@ resource "azurerm_subnet" "postgresql_subnet" {
   resource_group_name  = var.resource_group_name
   virtual_network_name = azurerm_virtual_network.taro_production_vnet.name
   address_prefixes     = ["10.0.1.0/24"]
+  delegation {
+    name = "fs"
+    service_delegation {
+      name = "Microsoft.DBforPostgreSQL/flexibleServers"
+      actions = [
+        "Microsoft.Network/virtualNetworks/subnets/join/action",
+      ]
+    }
+  }
 }
+
 
 # Create a network security group
 resource "azurerm_network_security_group" "taro_production_network_security_group" {
