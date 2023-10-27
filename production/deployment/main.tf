@@ -38,7 +38,7 @@ resource "azurerm_virtual_network" "taro_production_vnet" {
 }
 
 resource "azurerm_private_dns_zone" "taro_dns_zone" {
-  name                = "example.postgres.database.azure.com"
+  name                = "taro.postgres.database.azure.com"
   resource_group_name = var.resource_group_name
 }
 
