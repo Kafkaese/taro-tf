@@ -137,6 +137,7 @@ resource "azurerm_container_group" "container-instance-api" {
   name                = var.container_group_name_api
   location            = var.resource_group_location
   resource_group_name = var.resource_group_name
+  subnet_ids = [azurerm_subnet.postgresql_subnet.id]
   ip_address_type     = "Public"
   os_type             = "Linux"
   depends_on          = [ azurerm_postgresql_flexible_server_database.pg-db ]
