@@ -49,6 +49,15 @@ resource "azurerm_private_dns_zone_virtual_network_link" "taro_vnete_dns_zone" {
   resource_group_name   = var.resource_group_name
 }
 
+# Subnet for the API
+resource "azurerm_subnet" "backend_subnet" {
+  name = "taro-production-backend-subnet"
+  resource_group_name  = var.resource_group_name
+  virtual_network_name = azurerm_virtual_network.taro_production_vnet.name
+  address_prefixes     = ["10.0.1.0/24"]
+}
+
+/*
 # Define a subnet for PostgreSQL server
 resource "azurerm_subnet" "postgresql_subnet" {
   name                 = "postgresql-subnet"
@@ -65,8 +74,9 @@ resource "azurerm_subnet" "postgresql_subnet" {
     }
   }
 }
+*/
 
-
+/*
 # Create a network security group
 resource "azurerm_network_security_group" "taro_production_network_security_group" {
   name                = "taro-production-network-security-group"
@@ -131,14 +141,14 @@ resource "azurerm_container_group" "container-instance-frontend" {
     ]
   }
 }
-
+*/
 # Container Instance for the api
 resource "azurerm_container_group" "container-instance-api" {
   name                = var.container_group_name_api
   location            = var.resource_group_location
   resource_group_name = var.resource_group_name
-  subnet_ids = [azurerm_subnet.postgresql_subnet.id]
-  ip_address_type     = "Public"
+  subnet_ids          = [azurerm_subnet.postgresql_subnet.id]
+  ip_address_type     = "Private"
   os_type             = "Linux"
   depends_on          = [ azurerm_postgresql_flexible_server_database.pg-db ]
 
@@ -191,4 +201,6 @@ resource "azurerm_container_group" "container-instance-api" {
       null_resource.always_run
     ]
   }
+
+
 }
