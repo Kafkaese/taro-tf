@@ -74,7 +74,7 @@ resource "azurerm_private_endpoint" "taro_postgres_endpoint" {
   name                = "taro-postgres-endpoint"
   location            = var.resource_group_location
   resource_group_name = var.resource_group_name
-  subnet_id           = azurerm_subnet.postgresql_subnet
+  subnet_id           = azurerm_subnet.postgresql_subnet.id
 
   private_service_connection {
     name                           = "taro-postgres-connection"
@@ -83,7 +83,13 @@ resource "azurerm_private_endpoint" "taro_postgres_endpoint" {
   }
 }
 
+# Private Endpoint Connecton for postgres server
+data "azurerm_private_endpoint_connection" "taro_postgres_endpoint_connection" {
+  depends_on = [azurerm_private_endpoint.taro_postgres_endpoint]
 
+  name                = azurerm_private_endpoint.taro_postgres_endpoint.name
+  resource_group_name = var.resource_group_name
+}
 
 /*
 # Create a network security group
