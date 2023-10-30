@@ -29,7 +29,7 @@ resource "azurerm_postgresql_flexible_server_database" "pg-db" {
   collation = "en_US.utf8"
 }
 
-# Create a virtual network
+# Virtual network
 resource "azurerm_virtual_network" "taro_production_vnet" {
   name                = "taro-production-vnet"
   resource_group_name = var.resource_group_name
@@ -37,11 +37,13 @@ resource "azurerm_virtual_network" "taro_production_vnet" {
   address_space       = ["10.0.0.0/16"]
 }
 
+# Private DNS zone
 resource "azurerm_private_dns_zone" "taro_dns_zone" {
   name                = "taro.postgres.database.azure.com"
   resource_group_name = var.resource_group_name
 }
 
+# Link vnet and dns zone
 resource "azurerm_private_dns_zone_virtual_network_link" "taro_vnete_dns_zone" {
   name                  = "exampleVnetZone.com"
   private_dns_zone_name = azurerm_private_dns_zone.taro_dns_zone.name
@@ -57,24 +59,31 @@ resource "azurerm_subnet" "backend_subnet" {
   address_prefixes     = ["10.0.1.0/24"]
 }
 
-/*
-# Define a subnet for PostgreSQL server
+
+# Subnet for the postgresql flexible server with service endpoint
 resource "azurerm_subnet" "postgresql_subnet" {
   name                 = "postgresql-subnet"
   resource_group_name  = var.resource_group_name
   virtual_network_name = azurerm_virtual_network.taro_production_vnet.name
-  address_prefixes     = ["10.0.1.0/24"]
-  delegation {
-    name = "fs"
-    service_delegation {
-      name = "Microsoft.DBforPostgreSQL/flexibleServers"
-      actions = [
-        "Microsoft.Network/virtualNetworks/subnets/join/action",
-      ]
-    }
+  address_prefixes     = ["10.0.2.0/24"]
+  service_endpoints    = ["Microsoft.DBforPostgreSQL/flexibleServers"] 
+}
+
+# Private endpoint for postgres server
+resource "azurerm_private_endpoint" "taro_postgres_endpoint" {
+  name                = "taro-postgres-endpoint"
+  location            = var.resource_group_location
+  resource_group_name = var.resource_group_name
+  subnet_id           = azurerm_subnet.postgresql_subnet
+
+  private_service_connection {
+    name                           = "taro-postgres-connection"
+    private_connection_resource_id = azurerm_postgresql_flexible_server.pg-server.id
+    is_manual_connection           = false
   }
 }
-*/
+
+
 
 /*
 # Create a network security group
