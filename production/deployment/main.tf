@@ -66,30 +66,8 @@ resource "azurerm_subnet" "postgresql_subnet" {
   resource_group_name  = var.resource_group_name
   virtual_network_name = azurerm_virtual_network.taro_production_vnet.name
   address_prefixes     = ["10.0.2.0/24"]
-  service_endpoints    = ["Microsoft.DBforPostgreSQL/flexibleServers"] 
 }
 
-# Private endpoint for postgres server
-resource "azurerm_private_endpoint" "taro_postgres_endpoint" {
-  name                = "taro-postgres-endpoint"
-  location            = var.resource_group_location
-  resource_group_name = var.resource_group_name
-  subnet_id           = azurerm_subnet.postgresql_subnet.id
-
-  private_service_connection {
-    name                           = "taro-postgres-connection"
-    private_connection_resource_id = azurerm_postgresql_flexible_server.pg-server.id
-    is_manual_connection           = false
-  }
-}
-
-# Private Endpoint Connecton for postgres server
-data "azurerm_private_endpoint_connection" "taro_postgres_endpoint_connection" {
-  depends_on = [azurerm_private_endpoint.taro_postgres_endpoint]
-
-  name                = azurerm_private_endpoint.taro_postgres_endpoint.name
-  resource_group_name = var.resource_group_name
-}
 
 /*
 # Create a network security group
