@@ -60,7 +60,7 @@ resource "azurerm_subnet" "backend_subnet" {
   delegation {
     name = "api"
     service_delegation {
-      name    = "Microsoft.ContainerInstance"
+      name    = "Microsoft.ContainerInstance/containerGroups"
       actions = [
         "Microsoft.Network/virtualNetworks/subnets/join/action",
       ]
