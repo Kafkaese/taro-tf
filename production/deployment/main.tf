@@ -212,6 +212,19 @@ resource "azurerm_container_group" "container-instance-api" {
       null_resource.always_run
     ]
   }
+}
 
-
+resource "azurerm_public_ip" "taro_production_api_public_ip" {
+  name = "taro-production-api-public-ip"
+  resource_group_name = var.resource_group_name
+  location = var.resource_group_location
+  allocation_method = "Static"
+  
+  lifecycle {
+   create_before_destroy = true 
+  }
+  
+  tags = {
+    environment = var.environment  
+  }
 }
