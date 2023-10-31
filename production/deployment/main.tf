@@ -79,7 +79,7 @@ resource "azurerm_container_group" "container-instance-frontend" {
 */
 
 # Load balancer for API
-resource "azurerm_lb" "tarp-production-lb" {
+resource "azurerm_lb" "taro-production-lb" {
   name                = "taro-production-load-balancer"
   location            = var.resource_group_location
   resource_group_name = var.resource_group_name
@@ -88,6 +88,12 @@ resource "azurerm_lb" "tarp-production-lb" {
     name                 = "PublicIPAddress"
     public_ip_address_id = var.api_ip_id
   }
+}
+
+# IP address pool for api load balancer
+data "azurerm_lb_backend_address_pool" "taro-production-lb-address-pool" {
+  name            = "taro-api-pool"
+  loadbalancer_id = azurerm_lb.taro-production-lb.id
 }
 
 # Container Instance for the api
