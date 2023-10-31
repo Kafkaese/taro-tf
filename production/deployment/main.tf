@@ -127,13 +127,24 @@ resource "azurerm_lb_backend_address_pool_address" "taro-production-api-containe
   ip_address              = azurerm_container_group.container-instance-api.ip_address
 }
 
+# Load balancer rule
+resource "azurerm_lb_rule" "example" {
+  loadbalancer_id                = azurerm_lb.taro-production-lb.id
+  name                           = "HTTP"
+  protocol                       = "Tcp"
+  frontend_port                  = 80
+  backend_port                   = 80
+  frontend_ip_configuration_name = "publicIPAddress"
+  
+}
+
 # Container Instance for the api
 resource "azurerm_container_group" "container-instance-api" {
   name                = var.container_group_name_api
   location            = var.resource_group_location
   resource_group_name = var.resource_group_name
   subnet_ids = [ azurerm_subnet.backend_subnet.id ]
-  ip_address_type     = "Public"
+  ip_address_type     = "Private"
   os_type             = "Linux"
   depends_on          = [ azurerm_postgresql_flexible_server_database.pg-db ]
 
