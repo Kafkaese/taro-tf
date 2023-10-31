@@ -26,12 +26,12 @@ resource "azurerm_postgresql_flexible_server_database" "pg-db" {
   collation = "en_US.utf8"
 }
 
-resource "azurerm_postgresql_firewall_rule" "example" {
-  name                = "office"
-  resource_group_name = azurerm_resource_group.example.name
-  server_name         = azurerm_postgresql_server.example.name
-  start_ip_address    = "40.112.8.12"
-  end_ip_address      = "40.112.8.12"
+resource "azurerm_postgresql_firewall_rule" "postgres-for-api-firewall-rule" {
+  name                = "api-can-access-postgres"
+  resource_group_name = var.resource_group_name
+  server_name         = azurerm_postgresql_flexible_server.pg-server.name
+  start_ip_address    = var.api_ip_adddress
+  end_ip_address      = var.api_ip_adddress
 }
 
 /*
