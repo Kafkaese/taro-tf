@@ -91,7 +91,7 @@ resource "azurerm_lb" "taro-production-lb" {
 }
 
 # IP address pool for api load balancer
-data "azurerm_lb_backend_address_pool" "taro-production-lb-address-pool" {
+resource "azurerm_lb_backend_address_pool" "taro-production-lb-address-pool" {
   name            = "taro-api-pool"
   loadbalancer_id = azurerm_lb.taro-production-lb.id
 }
