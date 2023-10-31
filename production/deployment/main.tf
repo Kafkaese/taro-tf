@@ -26,12 +26,13 @@ resource "azurerm_postgresql_flexible_server_database" "pg-db" {
   collation = "en_US.utf8"
 }
 
-resource "azurerm_postgresql_firewall_rule" "postgres-for-api-firewall-rule" {
+
+resource "azurerm_postgresql_flexible_server_firewall_rule" "postgres-for-api-firewall-rule" {
   name                = "api-can-access-postgres"
-  resource_group_name = var.resource_group_name
-  server_name         = azurerm_postgresql_flexible_server.pg-server.name
+  server_id           = azurerm_postgresql_flexible_server.pg-server.id
   start_ip_address    = var.api_ip_address
   end_ip_address      = var.api_ip_address
+  depends_on = [ azurerm_postgresql_flexible_server.pg-server ]
 }
 
 /*
@@ -77,6 +78,7 @@ resource "azurerm_container_group" "container-instance-frontend" {
 }
 */
 
+/*
 # Container Instance for the api
 resource "azurerm_container_group" "container-instance-api" {
   name                = var.container_group_name_api
@@ -152,3 +154,4 @@ resource "azurerm_public_ip" "taro_production_api_public_ip" {
     environment = var.environment  
   }
 }
+*/
