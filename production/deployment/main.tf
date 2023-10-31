@@ -26,6 +26,30 @@ resource "azurerm_postgresql_flexible_server_database" "pg-db" {
   collation = "en_US.utf8"
 }
 
+# Virtual network
+resource "azurerm_virtual_network" "taro_production_vnet" {
+  name                = "taro-production-vnet"
+  resource_group_name = var.resource_group_name
+  location            = var.resource_group_location
+  address_space       = ["10.0.0.0/16"]
+}
+
+# Subnet for the API
+resource "azurerm_subnet" "backend_subnet" {
+  name                 = "taro-production-backend-subnet"
+  resource_group_name  = var.resource_group_name
+  virtual_network_name = azurerm_virtual_network.taro_production_vnet.name
+  address_prefixes     = ["10.0.1.0/24"]
+  delegation {
+    name = "api"
+    service_delegation {
+      name    = "Microsoft.ContainerInstance/containerGroups"
+      actions = [
+        "Microsoft.Network/virtualNetworks/subnets/join/action",
+      ]
+    }
+  }
+}
 
 resource "azurerm_postgresql_flexible_server_firewall_rule" "postgres-for-api-firewall-rule" {
   name                = "api-can-access-postgres"
@@ -108,6 +132,7 @@ resource "azurerm_container_group" "container-instance-api" {
   name                = var.container_group_name_api
   location            = var.resource_group_location
   resource_group_name = var.resource_group_name
+  subnet_ids = [ azurerm_subnet.backend_subnet.id ]
   ip_address_type     = "Public"
   os_type             = "Linux"
   depends_on          = [ azurerm_postgresql_flexible_server_database.pg-db ]
