@@ -30,8 +30,8 @@ resource "azurerm_postgresql_firewall_rule" "postgres-for-api-firewall-rule" {
   name                = "api-can-access-postgres"
   resource_group_name = var.resource_group_name
   server_name         = azurerm_postgresql_flexible_server.pg-server.name
-  start_ip_address    = var.api_ip_adddress
-  end_ip_address      = var.api_ip_adddress
+  start_ip_address    = var.api_ip_address
+  end_ip_address      = var.api_ip_address
 }
 
 /*
