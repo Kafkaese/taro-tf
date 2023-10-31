@@ -62,7 +62,7 @@ variable "api_port" {
   default = "8000"
 }
 
-variable "api_ip_adddress" { 
+variable "api_ip_address" { 
 }
 
 variable "api_ip_id" {
