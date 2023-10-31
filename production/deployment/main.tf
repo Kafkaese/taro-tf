@@ -96,6 +96,13 @@ data "azurerm_lb_backend_address_pool" "taro-production-lb-address-pool" {
   loadbalancer_id = azurerm_lb.taro-production-lb.id
 }
 
+# API address for lb address pool
+resource "azurerm_lb_backend_address_pool_address" "taro-production-api-container-ip-address" {
+  name                    = "taro-production-api-container-ip-address"
+  backend_address_pool_id = azurerm_lb_backend_address_pool.taro-production-lb-address-pool.id
+  ip_address              = azurerm_container_group.container-instance-api.ip_address
+}
+
 # Container Instance for the api
 resource "azurerm_container_group" "container-instance-api" {
   name                = var.container_group_name_api
