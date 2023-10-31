@@ -78,13 +78,23 @@ resource "azurerm_container_group" "container-instance-frontend" {
 }
 */
 
-/*
+# Load balancer for API
+resource "azurerm_lb" "tarp-production-lb" {
+  name                = "taro-production-load-balancer"
+  location            = var.resource_group_location
+  resource_group_name = var.resource_group_name
+
+  frontend_ip_configuration {
+    name                 = "PublicIPAddress"
+    public_ip_address_id = var.api_ip_id
+  }
+}
+
 # Container Instance for the api
 resource "azurerm_container_group" "container-instance-api" {
   name                = var.container_group_name_api
   location            = var.resource_group_location
   resource_group_name = var.resource_group_name
-  subnet_ids          = [azurerm_subnet.backend_subnet.id]
   ip_address_type     = "Public"
   os_type             = "Linux"
   depends_on          = [ azurerm_postgresql_flexible_server_database.pg-db ]
@@ -140,18 +150,3 @@ resource "azurerm_container_group" "container-instance-api" {
   }
 }
 
-resource "azurerm_public_ip" "taro_production_api_public_ip" {
-  name = "taro-production-api-public-ip"
-  resource_group_name = var.resource_group_name
-  location = var.resource_group_location
-  allocation_method = "Static"
-  
-  lifecycle {
-   create_before_destroy = true 
-  }
-  
-  tags = {
-    environment = var.environment  
-  }
-}
-*/
