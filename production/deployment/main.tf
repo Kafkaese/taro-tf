@@ -151,6 +151,8 @@ resource "azurerm_lb_backend_address_pool" "taro-production-lb-address-pool" {
 resource "azurerm_lb_backend_address_pool_address" "taro-production-api-container-ip-address" {
   name                    = "taro-production-api-container-ip-address"
   backend_address_pool_id = azurerm_lb_backend_address_pool.taro-production-lb-address-pool.id
+  virtual_network_id      = azurerm_virtual_network.taro_production_vnet.id
+  ip_address              = azurerm_container_group.container-instance-api.ip_address
 }
 
 # Load balancer rule
