@@ -163,7 +163,7 @@ resource "azurerm_lb_rule" "example" {
   frontend_port                  = 80
   backend_port                   = 8000
   frontend_ip_configuration_name = "PublicIPAddress"
-  backend_address_pool_ids       = [ azurerm_lb_backend_address_pool.taro-production-lb-address-pool ]
+  backend_address_pool_ids       = [ azurerm_lb_backend_address_pool.taro-production-lb-address-pool.id ]
 }
 
 # Container Instance for the api
