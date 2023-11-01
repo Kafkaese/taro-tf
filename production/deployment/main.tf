@@ -161,7 +161,7 @@ resource "azurerm_lb_rule" "example" {
   name                           = "HTTP"
   protocol                       = "Tcp"
   frontend_port                  = 80
-  backend_port                   = 80
+  backend_port                   = 8000
   frontend_ip_configuration_name = "PublicIPAddress"
   
 }
