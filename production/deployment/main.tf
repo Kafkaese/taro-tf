@@ -160,7 +160,7 @@ resource "azurerm_lb_rule" "example" {
   protocol                       = "Tcp"
   frontend_port                  = 80
   backend_port                   = 80
-  frontend_ip_configuration_name = "publicIPAddress"
+  frontend_ip_configuration_name = "PublicIPAddress"
   
 }
 
