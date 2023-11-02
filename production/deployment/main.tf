@@ -12,8 +12,8 @@ resource "azurerm_postgresql_flexible_server" "pg-server" {
   resource_group_name = var.resource_group_name
   delegated_subnet_id    = azurerm_subnet.postgresql_subnet.id
   private_dns_zone_id    = azurerm_private_dns_zone.taro_dns_zone.id
-  sku_name = "B_Standard_B1ms"
   depends_on = [azurerm_private_dns_zone_virtual_network_link.taro_vnete_dns_zone]
+  sku_name = "B_Standard_B1ms"
   storage_mb = 32768
   version = 11
   administrator_login = var.postgres_user
@@ -51,30 +51,12 @@ resource "azurerm_private_dns_zone_virtual_network_link" "taro_vnete_dns_zone" {
   resource_group_name   = var.resource_group_name
 }
 
-# Subnet for the API
-resource "azurerm_subnet" "backend_subnet" {
-  name                 = "taro-production-backend-subnet"
-  resource_group_name  = var.resource_group_name
-  virtual_network_name = azurerm_virtual_network.taro_production_vnet.name
-  address_prefixes     = ["10.0.1.0/24"]
-  delegation {
-    name = "api"
-    service_delegation {
-      name    = "Microsoft.ContainerInstance/containerGroups"
-      actions = [
-        "Microsoft.Network/virtualNetworks/subnets/join/action",
-      ]
-    }
-  }
-}
-
-
 # Subnet for the postgresql flexible server
 resource "azurerm_subnet" "postgresql_subnet" {
   name                 = "postgresql-subnet"
   resource_group_name  = var.resource_group_name
   virtual_network_name = azurerm_virtual_network.taro_production_vnet.name
-  address_prefixes     = ["10.0.2.0/24"]
+  address_prefixes     = ["10.0.1.0/24"]
   delegation {
     name = "fs"
     service_delegation {
@@ -86,32 +68,24 @@ resource "azurerm_subnet" "postgresql_subnet" {
   }
 }
 
+# Subnet for the API
+resource "azurerm_subnet" "backend_subnet" {
+  name                 = "taro-production-backend-subnet"
+  resource_group_name  = var.resource_group_name
+  virtual_network_name = azurerm_virtual_network.taro_production_vnet.name
+  address_prefixes     = ["10.0.2.0/24"]
+  delegation {
+    name = "api"
+    service_delegation {
+      name    = "Microsoft.ContainerInstance/containerGroups"
+      actions = [
+        "Microsoft.Network/virtualNetworks/subnets/join/action",
+      ]
+    }
+  }
+}
 
 /*
-# Create a network security group
-resource "azurerm_network_security_group" "taro_production_network_security_group" {
-  name                = "taro-production-network-security-group"
-  depends_on          = [ azurerm_container_group.container-instance-api ]
-  resource_group_name = var.resource_group_name
-  location            = var.resource_group_location
-}
-
-# Allow incoming traffic to the PostgreSQL server only from the API container
-resource "azurerm_network_security_rule" "taro_production_api_postgres_rule" {
-  name                        = "allow-api-to-postgres"
-  priority                    = 1001
-  direction                   = "Inbound"
-  access                      = "Allow"
-  protocol                    = "Tcp"
-  source_port_range           = "*"
-  destination_port_range      = 5432
-  source_address_prefix       = azurerm_container_group.container-instance-api.ip_address
-  destination_address_prefix  = azurerm_subnet.postgresql_subnet.address_prefixes[0]
-  resource_group_name         = var.resource_group_name
-  network_security_group_name = azurerm_network_security_group.taro_production_network_security_group.name
-}
-
-
 # Container Instance for the frontend
 resource "azurerm_container_group" "container-instance-frontend" {
   name                = var.container_group_name_frontend
@@ -153,12 +127,51 @@ resource "azurerm_container_group" "container-instance-frontend" {
   }
 }
 */
+
+# Load balancer for API
+resource "azurerm_lb" "taro-production-lb" {
+  name                = "taro-production-load-balancer"
+  location            = var.resource_group_location
+  resource_group_name = var.resource_group_name
+  sku                 = "Standard"
+
+  frontend_ip_configuration {
+    name                 = "PublicIPAddress"
+    public_ip_address_id = var.api_ip_id
+  }
+}
+
+# IP address pool for api load balancer
+resource "azurerm_lb_backend_address_pool" "taro-production-lb-address-pool" {
+  name            = "taro-api-pool"
+  loadbalancer_id = azurerm_lb.taro-production-lb.id
+}
+
+# API address for lb address pool
+resource "azurerm_lb_backend_address_pool_address" "taro-production-api-container-ip-address" {
+  name                    = "taro-production-api-container-ip-address"
+  backend_address_pool_id = azurerm_lb_backend_address_pool.taro-production-lb-address-pool.id
+  virtual_network_id      = azurerm_virtual_network.taro_production_vnet.id
+  ip_address              = azurerm_container_group.container-instance-api.ip_address
+}
+
+# Load balancer rule
+resource "azurerm_lb_rule" "example" {
+  loadbalancer_id                = azurerm_lb.taro-production-lb.id
+  name                           = "HTTP"
+  protocol                       = "Tcp"
+  frontend_port                  = 80
+  backend_port                   = 8000
+  frontend_ip_configuration_name = "PublicIPAddress"
+  backend_address_pool_ids       = [ azurerm_lb_backend_address_pool.taro-production-lb-address-pool.id ]
+}
+
 # Container Instance for the api
 resource "azurerm_container_group" "container-instance-api" {
   name                = var.container_group_name_api
   location            = var.resource_group_location
   resource_group_name = var.resource_group_name
-  subnet_ids          = [azurerm_subnet.backend_subnet.id]
+  subnet_ids          = [ azurerm_subnet.backend_subnet.id ]
   ip_address_type     = "Private"
   os_type             = "Linux"
   depends_on          = [ azurerm_postgresql_flexible_server_database.pg-db ]
@@ -212,6 +225,5 @@ resource "azurerm_container_group" "container-instance-api" {
       null_resource.always_run
     ]
   }
-
-
 }
+
