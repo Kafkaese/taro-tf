@@ -234,7 +234,7 @@ resource "azurerm_lb_rule" "taro-production-frontend-lb-rule" {
   name                           = "HTTP"
   protocol                       = "Tcp"
   frontend_port                  = 80
-  backend_port                   = 3000
+  backend_port                   = 80
   frontend_ip_configuration_name = "PublicFrontendIPAddress"
   backend_address_pool_ids       = [ azurerm_lb_backend_address_pool.taro-production-frontend-lb-address-pool.id ]
 }
