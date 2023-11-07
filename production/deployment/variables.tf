@@ -67,3 +67,9 @@ variable "api_ip_address" {
 
 variable "api_ip_id" {
 }
+
+variable "frontend_ip_address" { 
+}
+
+variable "frontend_ip_id" {
+}
