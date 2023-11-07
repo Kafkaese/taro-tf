@@ -245,7 +245,7 @@ resource "azurerm_container_group" "container-instance-frontend" {
   location            = var.resource_group_location
   resource_group_name = var.resource_group_name
   subnet_ids          = [ azurerm_subnet.frontend_subnet.id ]
-  ip_address_type     = "Public"
+  ip_address_type     = "Private"
   os_type             = "Linux"
   image_registry_credential {
     username = var.container_registry_credential_user
