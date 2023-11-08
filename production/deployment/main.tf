@@ -163,6 +163,7 @@ resource "azurerm_container_group" "container-instance-api" {
       POSTGRES_DB=var.postgres_database
       POSTGRES_USER=var.postgres_user
       POSTGRES_PASSWORD=var.postgres_password
+      REACT_HOST=var.frontend_ip_address
       LOG_PATH="./Log"
     }
 
