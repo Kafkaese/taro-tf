@@ -59,7 +59,7 @@ variable "postgres_database" {
 }
 
 variable "api_port" {
-  default = "8000"
+  default = "80"
 }
 
 variable "api_ip_address" { 
