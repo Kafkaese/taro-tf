@@ -1,5 +1,5 @@
 variable "resource_group_location" {
-  default     = "germanywestcentral"
+  default     = "francecentral"
   description = "Location of the resource group."
 }
 
@@ -8,6 +8,6 @@ variable "resource_group_name" {
   description = "The resource group name."
 }
 
-variable "acr_name" {
-  default = "taro-container-registry"
+variable "container_registry_name" {
+  default = "taroContainerRegistry"
 }

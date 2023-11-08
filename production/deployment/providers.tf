@@ -4,14 +4,14 @@ terraform {
   backend "azurerm" {
     resource_group_name  = "taro"
     storage_account_name = "taro"
-    container_name       = "terraform-staging-env"
-    key                  = "staging.tfstate"
+    container_name       = "terraform-production-env"
+    key                  = "prod.tfstate"
   }
 
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "~>2.0"
+      version = "~>3.0"
     }
     azuread = {
       source = "hashicorp/azuread"
@@ -20,6 +20,10 @@ terraform {
     random = {
       source  = "hashicorp/random"
       version = "~>3.0"
+    }
+    null = {
+      source = "hashicorp/null"
+      version = "~>2.0"
     }
   }
 }

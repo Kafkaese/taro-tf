@@ -1,31 +1,18 @@
-# Resource ggroup on Azure
-resource "azurerm_resource_group" "rg" {
-  location = var.resource_group_location
-  name     = var.resource_group_name
-}
-
-# Storage account for backend
-resource "azurerm_storage_account" "storage" {
-  name = "taro"
-  resource_group_name = azurerm_resource_group.rg.name
-  location = azurerm_resource_group.rg.location
-  account_tier = "Standard"
-  account_replication_type = "LRS"
-}
-
-# Container registry for all images
-resource "azurerm_container_registry" "container-registry" {
-  name                = var.acr_name
-  resource_group_name = azurerm_resource_group.rg.name
-  location            = azurerm_resource_group.rg.location
-  sku                 = "Basic"
+# Null resource to trigger redeploy on container instances
+resource "null_resource" "always_run" {
+  triggers = {
+    timestamp = "${timestamp()}"
+  }
 }
 
 # Postgres server
 resource "azurerm_postgresql_flexible_server" "pg-server" {
-  name = "${lower(random_id.pg-server-id.hex)}"
-  location = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
+  name = var.postgres_server_name
+  location = var.resource_group_location
+  resource_group_name = var.resource_group_name
+  delegated_subnet_id    = azurerm_subnet.postgresql_subnet.id
+  private_dns_zone_id    = azurerm_private_dns_zone.taro_dns_zone.id
+  depends_on = [azurerm_private_dns_zone_virtual_network_link.taro_vnete_dns_zone]
   sku_name = "B_Standard_B1ms"
   storage_mb = 32768
   version = 11
@@ -42,70 +29,142 @@ resource "azurerm_postgresql_flexible_server_database" "pg-db" {
   collation = "en_US.utf8"
 }
 
-# Firewall rule for the postgres server !!! currently open to all IP addresses
-resource "azurerm_postgresql_flexible_server_firewall_rule" "pg-server-open" {
-  name                = "allpublic"
-  server_id           = azurerm_postgresql_flexible_server.pg-server.id
-  start_ip_address    = "0.0.0.0"
-  end_ip_address      = "255.255.255.255"
+# Virtual network
+resource "azurerm_virtual_network" "taro_production_vnet" {
+  name                = "taro-production-vnet"
+  resource_group_name = var.resource_group_name
+  location            = var.resource_group_location
+  address_space       = ["10.0.0.0/16"]
 }
 
-/*
-# Container Instance for the frontend
-resource "azurerm_container_group" "container-instance" {
-  name                = var.instance_name
+# Private DNS zone
+resource "azurerm_private_dns_zone" "taro_dns_zone" {
+  name                = "taro.postgres.database.azure.com"
+  resource_group_name = var.resource_group_name
+}
+
+# Link vnet and dns zone
+resource "azurerm_private_dns_zone_virtual_network_link" "taro_vnete_dns_zone" {
+  name                  = "exampleVnetZone.com"
+  private_dns_zone_name = azurerm_private_dns_zone.taro_dns_zone.name
+  virtual_network_id    = azurerm_virtual_network.taro_production_vnet.id
+  resource_group_name   = var.resource_group_name
+}
+
+# Subnet for the postgresql flexible server
+resource "azurerm_subnet" "postgresql_subnet" {
+  name                 = "postgresql-subnet"
+  resource_group_name  = var.resource_group_name
+  virtual_network_name = azurerm_virtual_network.taro_production_vnet.name
+  address_prefixes     = ["10.0.1.0/24"]
+  delegation {
+    name = "fs"
+    service_delegation {
+      name = "Microsoft.DBforPostgreSQL/flexibleServers"
+      actions = [
+        "Microsoft.Network/virtualNetworks/subnets/join/action",
+      ]
+    }
+  }
+}
+
+# Subnet for the API
+resource "azurerm_subnet" "backend_subnet" {
+  name                 = "taro-production-backend-subnet"
+  resource_group_name  = var.resource_group_name
+  virtual_network_name = azurerm_virtual_network.taro_production_vnet.name
+  address_prefixes     = ["10.0.2.0/24"]
+  delegation {
+    name = "api"
+    service_delegation {
+      name    = "Microsoft.ContainerInstance/containerGroups"
+      actions = [
+        "Microsoft.Network/virtualNetworks/subnets/join/action",
+      ]
+    }
+  }
+}
+
+# Load balancer for API
+resource "azurerm_lb" "taro-production-lb" {
+  name                = "taro-production-load-balancer"
   location            = var.resource_group_location
   resource_group_name = var.resource_group_name
-  ip_address_type     = "Public"
-  os_type             = "Linux"
+  sku                 = "Standard"
 
-  image_registry_credential {
-    username = var.image_registry_credential_user
-    password = var.image_registry_credential_password
-    server   = azurerm_container_registry.container-registry.login_server
+  frontend_ip_configuration {
+    name                 = "PublicIPAddress"
+    public_ip_address_id = var.api_ip_id
   }
+}
 
-  container {
-    name   = "taro-frontend"
-    image  = "${var.image_registry_login_server}/taro:frontend"
-    cpu    = "0.5"
-    memory = "1.5"
-    environment_variables = {
-      ENV=var.environment
-    }
+# IP address pool for api load balancer
+resource "azurerm_lb_backend_address_pool" "taro-production-lb-address-pool" {
+  name            = "taro-api-pool"
+  loadbalancer_id = azurerm_lb.taro-production-lb.id
+}
 
-    ports {
-      port     = 3000
-      protocol = "TCP"
-    }
-  }
+# API address for lb address pool
+resource "azurerm_lb_backend_address_pool_address" "taro-production-api-container-ip-address" {
+  name                    = "taro-production-api-container-ip-address"
+  backend_address_pool_id = azurerm_lb_backend_address_pool.taro-production-lb-address-pool.id
+  virtual_network_id      = azurerm_virtual_network.taro_production_vnet.id
+  ip_address              = azurerm_container_group.container-instance-api.ip_address
+}
 
-  tags = {
-    environment = var.environment
-  }
+# Load balancer rule
+resource "azurerm_lb_rule" "example" {
+  loadbalancer_id                = azurerm_lb.taro-production-lb.id
+  name                           = "HTTP"
+  protocol                       = "Tcp"
+  frontend_port                  = 80
+  backend_port                   = 8000
+  frontend_ip_configuration_name = "PublicIPAddress"
+  backend_address_pool_ids       = [ azurerm_lb_backend_address_pool.taro-production-lb-address-pool.id ]
 }
 
 # Container Instance for the api
 resource "azurerm_container_group" "container-instance-api" {
-  name                = var.instance_name_api
+  name                = var.container_group_name_api
   location            = var.resource_group_location
   resource_group_name = var.resource_group_name
-  ip_address_type     = "Public"
+  subnet_ids          = [ azurerm_subnet.backend_subnet.id ]
+  ip_address_type     = "Private"
   os_type             = "Linux"
+  depends_on          = [ azurerm_postgresql_flexible_server_database.pg-db ]
 
   image_registry_credential {
-    username = var.image_registry_credential_user
-    password = var.image_registry_credential_password
-    server   = azurerm_container_registry.container-registry.login_server
+    username = var.container_registry_credential_user
+    password = var.container_registry_credential_password
+    server   = var.container_registry_login_server
+  }
+
+  init_container {
+    name = "pipeline"
+    image = "${var.container_registry_login_server}/taro:pipeline"
+    environment_variables = {
+      POSTGRES_HOST=azurerm_postgresql_flexible_server.pg-server.fqdn
+      POSTGRES_PORT=var.postgres_port
+      POSTGRES_USER=var.postgres_user
+      POSTGRES_DB=var.postgres_database
+      POSTGRES_PASSWORD=var.postgres_password
+    }
   }
 
   container {
     name   = "taro-api"
-    image  = "${var.image_registry_login_server}/taro:api"
+    image  = "${var.container_registry_login_server}/taro:api"
     cpu    = "0.5"
     memory = "1.5"
     environment_variables = {
       ENV=var.environment
+      POSTGRES_HOST=azurerm_postgresql_flexible_server.pg-server.fqdn
+      POSTGRES_PORT=var.postgres_port
+      POSTGRES_DB=var.postgres_database
+      POSTGRES_USER=var.postgres_user
+      POSTGRES_PASSWORD=var.postgres_password
+      REACT_HOST=var.frontend_ip_address
+      LOG_PATH="./Log"
     }
 
     ports {
@@ -114,13 +173,111 @@ resource "azurerm_container_group" "container-instance-api" {
     }
   }
 
+
   tags = {
     environment = var.environment
   }
+
+  lifecycle {
+    replace_triggered_by = [
+      null_resource.always_run
+    ]
+  }
 }
-*/
 
+# Subnet for the Frontend
+resource "azurerm_subnet" "frontend_subnet" {
+  name                 = "taro-production-frontend-subnet"
+  resource_group_name  = var.resource_group_name
+  virtual_network_name = azurerm_virtual_network.taro_production_vnet.name
+  address_prefixes     = ["10.0.3.0/24"]
+  delegation {
+    name = "frontend"
+    service_delegation {
+      name    = "Microsoft.ContainerInstance/containerGroups"
+      actions = [
+        "Microsoft.Network/virtualNetworks/subnets/join/action",
+      ]
+    }
+  }
+}
 
+# Load balancer for Frontend
+resource "azurerm_lb" "taro-production-frontend-lb" {
+  name                = "taro-production-frontend-load-balancer"
+  location            = var.resource_group_location
+  resource_group_name = var.resource_group_name
+  sku                 = "Standard"
 
+  frontend_ip_configuration {
+    name                 = "PublicFrontendIPAddress"
+    public_ip_address_id = var.frontend_ip_id
+  }
+}
 
+# IP address pool for frontend load balancer
+resource "azurerm_lb_backend_address_pool" "taro-production-frontend-lb-address-pool" {
+  name            = "taro-frontend-pool"
+  loadbalancer_id = azurerm_lb.taro-production-frontend-lb.id
+}
 
+# Frontend address for lb address pool
+resource "azurerm_lb_backend_address_pool_address" "taro-production-frontend-container-ip-address" {
+  name                    = "taro-production-frontend-container-ip-address"
+  backend_address_pool_id = azurerm_lb_backend_address_pool.taro-production-frontend-lb-address-pool.id
+  virtual_network_id      = azurerm_virtual_network.taro_production_vnet.id
+  ip_address              = azurerm_container_group.container-instance-frontend.ip_address
+}
+
+# Load balancer rule
+resource "azurerm_lb_rule" "taro-production-frontend-lb-rule" {
+  loadbalancer_id                = azurerm_lb.taro-production-frontend-lb.id
+  name                           = "HTTP"
+  protocol                       = "Tcp"
+  frontend_port                  = 80
+  backend_port                   = 80
+  frontend_ip_configuration_name = "PublicFrontendIPAddress"
+  backend_address_pool_ids       = [ azurerm_lb_backend_address_pool.taro-production-frontend-lb-address-pool.id ]
+}
+
+# Container Instance for the frontend
+resource "azurerm_container_group" "container-instance-frontend" {
+  name                = var.container_group_name_frontend
+  location            = var.resource_group_location
+  resource_group_name = var.resource_group_name
+  subnet_ids          = [ azurerm_subnet.frontend_subnet.id ]
+  ip_address_type     = "Private"
+  os_type             = "Linux"
+  image_registry_credential {
+    username = var.container_registry_credential_user
+    password = var.container_registry_credential_password
+    server   = var.container_registry_login_server
+  }
+
+  container {
+    name   = "taro-frontend"
+    image  = "${var.container_registry_login_server}/taro:frontend"
+    cpu    = "0.5"
+    memory = "1.5"
+    environment_variables = {
+      ENV=var.environment
+      REACT_APP_API_HOST=var.api_ip_address
+      REACT_APP_API_PORT=var.api_port
+    }
+
+    ports {
+      port     = 80
+      protocol = "TCP"
+    }
+  }
+
+  tags = {
+    environment = var.environment
+  }
+
+  lifecycle {
+    replace_triggered_by = [
+      null_resource.always_run
+    ]
+  }
+}
