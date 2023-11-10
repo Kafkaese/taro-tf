@@ -73,3 +73,6 @@ variable "frontend_ip_address" {
 
 variable "frontend_ip_id" {
 }
+
+variable "storage_account_id" {
+}
