@@ -292,3 +292,26 @@ resource "azurerm_container_group" "container-instance-frontend" {
     ]
   }
 }
+
+# Storage Account Private Service Endpoint Config
+
+
+# Private Service Endpoint
+resource "azurerm_private_endpoint" "taro-storage-endpoint" {
+  name                = "taro-storage-endpoint"
+  location            = var.resource_group_location
+  resource_group_name = var.resource_group_name
+  subnet_id           = azurerm_subnet.snet_endpoint.id
+
+  private_service_connection {
+    name                           = "sc-sta"
+    private_connection_resource_id = azurerm_storage_account.st.id
+    subresource_names              = ["blob"]
+    is_manual_connection           = false
+  }
+
+  private_dns_zone_group {
+    name                 = "dns-group-sta"
+    private_dns_zone_ids = [azurerm_private_dns_zone.pdns_st.id]
+  }
+}
