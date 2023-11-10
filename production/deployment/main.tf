@@ -295,6 +295,15 @@ resource "azurerm_container_group" "container-instance-frontend" {
 
 # Storage Account Private Service Endpoint Config
 
+# Storage account for certificates
+resource "azurerm_storage_account" "ssl-storage" {
+  name = "taro-ssl"
+  resource_group_name = var.resource_group_name
+  location = var.resource_group_location
+  account_tier = "Standard"
+  account_replication_type = "LRS"
+}
+
 # Subnet for the Storage Account
 resource "azurerm_subnet" "storage-endpoint-subnet" {
   name                 = "storage-endpoint-subnet"
@@ -304,6 +313,14 @@ resource "azurerm_subnet" "storage-endpoint-subnet" {
   private_endpoint_network_policies_enabled = true
 }
 
+# DNS Record for service endpoint
+resource "azurerm_private_dns_a_record" "storage-endpoint-dns-record" {
+  name                = "storage-endpoint-dns-record"
+  zone_name           = azurerm_private_dns_zone.taro_dns_zone.name
+  resource_group_name = var.resource_group_name
+  ttl                 = 300
+  records             = [azurerm_private_endpoint.taro-storage-endpoint.private_service_connection.0.private_ip_address]
+}
 
 # Private Service Endpoint
 resource "azurerm_private_endpoint" "taro-storage-endpoint" {
@@ -314,7 +331,7 @@ resource "azurerm_private_endpoint" "taro-storage-endpoint" {
 
   private_service_connection {
     name                           = "sc-sta"
-    private_connection_resource_id = var.storage_account_id
+    private_connection_resource_id = azurerm_storage_account.ssl-storage.id
     subresource_names              = ["blob"]
     is_manual_connection           = false
   }
