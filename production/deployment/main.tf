@@ -295,23 +295,32 @@ resource "azurerm_container_group" "container-instance-frontend" {
 
 # Storage Account Private Service Endpoint Config
 
+# Subnet for the Storage Account
+resource "azurerm_subnet" "storage-endpoint-subnet" {
+  name                 = "storage-endpoint-subnet"
+  address_prefixes     = ["10.0.4.0/24"]
+  virtual_network_name = azurerm_virtual_network.taro_production_vnet.name
+  resource_group_name  = var.resource_group_name 
+  private_endpoint_network_policies_enabled = true
+}
+
 
 # Private Service Endpoint
 resource "azurerm_private_endpoint" "taro-storage-endpoint" {
   name                = "taro-storage-endpoint"
   location            = var.resource_group_location
   resource_group_name = var.resource_group_name
-  subnet_id           = azurerm_subnet.snet_endpoint.id
+  subnet_id           = azurerm_subnet.storage-endpoint-subnet.id
 
   private_service_connection {
     name                           = "sc-sta"
-    private_connection_resource_id = azurerm_storage_account.st.id
+    private_connection_resource_id = var.storage_account_id
     subresource_names              = ["blob"]
     is_manual_connection           = false
   }
 
   private_dns_zone_group {
     name                 = "dns-group-sta"
-    private_dns_zone_ids = [azurerm_private_dns_zone.pdns_st.id]
+    private_dns_zone_ids = [azurerm_private_dns_zone.taro_dns_zone.id]
   }
 }
