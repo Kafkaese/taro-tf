@@ -297,11 +297,12 @@ resource "azurerm_container_group" "container-instance-frontend" {
 
 # Storage account for certificates
 resource "azurerm_storage_account" "ssl-storage" {
-  name = "taro-ssl"
+  name = "tarossl"
   resource_group_name = var.resource_group_name
   location = var.resource_group_location
   account_tier = "Standard"
   account_replication_type = "LRS"
+  public_network_access_enabled = false
 }
 
 # Subnet for the Storage Account
