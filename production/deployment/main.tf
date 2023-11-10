@@ -240,6 +240,17 @@ resource "azurerm_lb_rule" "taro-production-frontend-lb-rule" {
   backend_address_pool_ids       = [ azurerm_lb_backend_address_pool.taro-production-frontend-lb-address-pool.id ]
 }
 
+# Load balancer rule
+resource "azurerm_lb_rule" "taro-production-frontend-lb-rule-https" {
+  loadbalancer_id                = azurerm_lb.taro-production-frontend-lb.id
+  name                           = "HTTPS"
+  protocol                       = "Tcp"
+  frontend_port                  = 443
+  backend_port                   = 443
+  frontend_ip_configuration_name = "PublicFrontendIPAddress"
+  backend_address_pool_ids       = [ azurerm_lb_backend_address_pool.taro-production-frontend-lb-address-pool.id ]
+}
+
 # Container Instance for the frontend
 resource "azurerm_container_group" "container-instance-frontend" {
   name                = var.container_group_name_frontend
