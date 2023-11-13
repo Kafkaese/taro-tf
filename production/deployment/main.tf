@@ -305,6 +305,22 @@ resource "azurerm_storage_account" "ssl-storage" {
   public_network_access_enabled = false
 }
 
+resource "azurerm_storage_share" "ssl-certificate-share" {
+  name                 = "ssl-certificate-share"
+  storage_account_name = azurerm_storage_account.ssl-storage.name
+  quota                = 1
+
+  acl {
+    id = var.container_registry_credential_user
+
+    access_policy {
+      permissions = "rwdl"
+      start       = "2023-11-13T09:38:21.0000000Z"
+      expiry      = "2029-07-02T10:38:21.0000000Z"
+    }
+  } 
+}
+
 # Subnet for the Storage Account
 resource "azurerm_subnet" "storage-endpoint-subnet" {
   name                 = "storage-endpoint-subnet"
