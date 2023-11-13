@@ -259,6 +259,7 @@ resource "azurerm_container_group" "container-instance-frontend" {
   subnet_ids          = [ azurerm_subnet.frontend_subnet.id ]
   ip_address_type     = "Private"
   os_type             = "Linux"
+
   image_registry_credential {
     username = var.container_registry_credential_user
     password = var.container_registry_credential_password
@@ -280,7 +281,18 @@ resource "azurerm_container_group" "container-instance-frontend" {
       port     = 80
       protocol = "TCP"
     }
+/*
+    volume {
+      name                 = "sslshare"
+      mount_path           = "/share"
+      storage_account_name = azurerm_storage_account.ssl-storage.name
+      share_name           = azurerm_storage_share.ssl-certificate-share.name
+      storage_account_key  = azurerm_storage_account.ssl-storage.primary_access_key 
+      read_only            = false
+    }
+    */
   }
+
 
   tags = {
     environment = var.environment
@@ -302,9 +314,17 @@ resource "azurerm_storage_account" "ssl-storage" {
   location                      = var.resource_group_location
   account_tier                  = "Standard"
   account_replication_type      = "LRS"
-  public_network_access_enabled = false
+  
+  network_rules {
+    default_action             = "Deny"
+    virtual_network_subnet_ids = [ azurerm_subnet.storage-endpoint-subnet.id ]
+    ip_rules = [ var.dev_ip ]
+    bypass = [ "None" ]
+  }
 }
 
+/*
+# Storage share to mount to the frontend container
 resource "azurerm_storage_share" "ssl-certificate-share" {
   name                 = "ssl-certificate-share"
   storage_account_name = azurerm_storage_account.ssl-storage.name
@@ -315,11 +335,10 @@ resource "azurerm_storage_share" "ssl-certificate-share" {
 
     access_policy {
       permissions = "rwdl"
-      start       = "2023-11-13T09:38:21.0000000Z"
-      expiry      = "2029-07-02T10:38:21.0000000Z"
     }
   } 
 }
+*/
 
 # Subnet for the Storage Account
 resource "azurerm_subnet" "storage-endpoint-subnet" {
@@ -328,6 +347,7 @@ resource "azurerm_subnet" "storage-endpoint-subnet" {
   virtual_network_name = azurerm_virtual_network.taro_production_vnet.name
   resource_group_name  = var.resource_group_name 
   private_endpoint_network_policies_enabled = true
+  service_endpoints = [ "Microsoft.Storage" ]
 }
 
 # DNS Record for service endpoint
