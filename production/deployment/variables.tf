@@ -73,3 +73,7 @@ variable "frontend_ip_address" {
 
 variable "frontend_ip_id" {
 }
+
+variable "dev_ip" {
+  default = "public IP address for dev access"
+}
