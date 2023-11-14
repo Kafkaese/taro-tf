@@ -191,6 +191,7 @@ resource "azurerm_subnet" "frontend_subnet" {
   resource_group_name  = var.resource_group_name
   virtual_network_name = azurerm_virtual_network.taro_production_vnet.name
   address_prefixes     = ["10.0.3.0/24"]
+
   delegation {
     name = "frontend"
     service_delegation {
@@ -200,6 +201,8 @@ resource "azurerm_subnet" "frontend_subnet" {
       ]
     }
   }
+  
+  service_endpoints = [ "Microsoft.Storage" ]
 }
 
 # Load balancer for Frontend
@@ -281,16 +284,15 @@ resource "azurerm_container_group" "container-instance-frontend" {
       port     = 80
       protocol = "TCP"
     }
-/*
+
     volume {
       name                 = "sslshare"
-      mount_path           = "/share"
+      mount_path           = "/etc/letsencrypt/live/arms-tracker.app"
       storage_account_name = azurerm_storage_account.ssl-storage.name
       share_name           = azurerm_storage_share.ssl-certificate-share.name
       storage_account_key  = azurerm_storage_account.ssl-storage.primary_access_key 
       read_only            = false
     }
-    */
   }
 
 
@@ -317,13 +319,13 @@ resource "azurerm_storage_account" "ssl-storage" {
   
   network_rules {
     default_action             = "Deny"
-    virtual_network_subnet_ids = [ azurerm_subnet.storage-endpoint-subnet.id ]
+    virtual_network_subnet_ids = [ azurerm_subnet.storage-endpoint-subnet.id, azurerm_subnet.frontend_subnet.id ]
     ip_rules = [ var.dev_ip ]
     bypass = [ "None" ]
   }
 }
 
-/*
+
 # Storage share to mount to the frontend container
 resource "azurerm_storage_share" "ssl-certificate-share" {
   name                 = "ssl-certificate-share"
@@ -338,7 +340,7 @@ resource "azurerm_storage_share" "ssl-certificate-share" {
     }
   } 
 }
-*/
+
 
 # Subnet for the Storage Account
 resource "azurerm_subnet" "storage-endpoint-subnet" {
