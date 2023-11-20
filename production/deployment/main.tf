@@ -392,7 +392,7 @@ resource "azurerm_network_interface" "reverse-proxy-nic" {
 
   ip_configuration {
     name                          = "internal"
-    subnet_id                     = azurerm_subnet.rp-subnet
+    subnet_id                     = azurerm_subnet.rp-subnet.id
     private_ip_address_allocation = "Dynamic"
   }
 }
