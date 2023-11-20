@@ -427,11 +427,8 @@ resource "azurerm_linux_virtual_machine" "rp_vm" {
 
   computer_name                   = "taro-production-reverse-proxy"
   admin_username                  = "adminuser"
-  disable_password_authentication = true
+  admin_password                  = var.rp_vm_admin_password
+  disable_password_authentication = false
 
-  admin_ssh_key {
-    username   = "admin"
-    public_key = file("~/.ssh/id_rsa.pub")
-  }
 }
 
