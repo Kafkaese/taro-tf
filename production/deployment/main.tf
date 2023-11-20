@@ -385,14 +385,22 @@ resource "azurerm_private_endpoint" "taro-storage-endpoint" {
 ### Reverse proxy
 
 # NIC for reverse proxy vm
-resource "azurerm_network_interface" "example" {
-  name                = "example-nic"
-  location            = azurerm_resource_group.example.location
-  resource_group_name = azurerm_resource_group.example.name
+resource "azurerm_network_interface" "reverse-proxy-nic" {
+  name                = "taro-production-reverse-proxy-nic"
+  location            = var.resource_group_location
+  resource_group_name = var.resource_group_name
 
   ip_configuration {
     name                          = "internal"
-    subnet_id                     = azurerm_subnet.example.id
+    subnet_id                     = azurerm_subnet
     private_ip_address_allocation = "Dynamic"
   }
+}
+
+# Reverse proxy subnet
+resource "azurerm_subnet" "rp-subnet" {
+  name = "taro-production-reverse-proxy-subnet"
+  resource_group_name = var.resource_group_name
+  virtual_network_name = azurerm_virtual_network.taro_production_vnet.name
+  address_prefixes = [ "10.0.5.0/24" ]
 }
