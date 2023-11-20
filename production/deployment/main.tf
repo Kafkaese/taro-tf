@@ -404,3 +404,34 @@ resource "azurerm_subnet" "rp-subnet" {
   virtual_network_name = azurerm_virtual_network.taro_production_vnet.name
   address_prefixes = [ "10.0.5.0/24" ]
 }
+
+# Reverse Proxy VM
+resource "azurerm_linux_virtual_machine" "rp_vm" {
+  name                  = "taro-production-reverse-proxy"
+  location              = var.resource_group_location
+  resource_group_name   = var.resource_group_name
+  network_interface_ids = [azurerm_network_interface.reverse-proxy-nic]
+  size                  = "Standard_DC1s_v3"
+
+  os_disk {
+    caching              = "ReadWrite"
+    storage_account_type = "Standard_LRS"
+  }
+
+  source_image_reference {
+    publisher = "Canonical"
+    offer     = "UbuntuServer"
+    sku       = "18_04-lts-gen2"
+    version   = "latest"
+  }
+
+  computer_name                   = "taro-production-reverse-proxy"
+  admin_username                  = "admin"
+  disable_password_authentication = true
+
+  admin_ssh_key {
+    username   = "admin"
+    public_key = file("~/.ssh/id_rsa.pub")
+  }
+}
+
