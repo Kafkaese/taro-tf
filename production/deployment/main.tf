@@ -380,3 +380,19 @@ resource "azurerm_private_endpoint" "taro-storage-endpoint" {
     private_dns_zone_ids = [azurerm_private_dns_zone.taro_dns_zone.id]
   }
 }
+
+
+### Reverse proxy
+
+# NIC for reverse proxy vm
+resource "azurerm_network_interface" "example" {
+  name                = "example-nic"
+  location            = azurerm_resource_group.example.location
+  resource_group_name = azurerm_resource_group.example.name
+
+  ip_configuration {
+    name                          = "internal"
+    subnet_id                     = azurerm_subnet.example.id
+    private_ip_address_allocation = "Dynamic"
+  }
+}
