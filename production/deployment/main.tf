@@ -410,7 +410,7 @@ resource "azurerm_linux_virtual_machine" "rp_vm" {
   name                  = "taro-production-reverse-proxy"
   location              = var.resource_group_location
   resource_group_name   = var.resource_group_name
-  network_interface_ids = [azurerm_network_interface.reverse-proxy-nic]
+  network_interface_ids = [azurerm_network_interface.reverse-proxy-nic.id]
   size                  = "Standard_DC1s_v3"
 
   os_disk {
