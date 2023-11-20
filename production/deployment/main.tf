@@ -411,7 +411,7 @@ resource "azurerm_linux_virtual_machine" "rp_vm" {
   location              = var.resource_group_location
   resource_group_name   = var.resource_group_name
   network_interface_ids = [azurerm_network_interface.reverse-proxy-nic.id]
-  size                  = "Standard_DC1s_v3"
+  size                  = "Standard_B1s"
 
   os_disk {
     caching              = "ReadWrite"
