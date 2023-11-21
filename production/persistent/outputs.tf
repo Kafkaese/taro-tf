@@ -21,3 +21,7 @@ output "frontend_public_ip_id" {
 output "frontend_public_ip_address" {
   value = azurerm_public_ip.taro-production-frontend-public-ip.ip_address
 }
+
+output "rp_vm_public_ip_id" {
+  value = azurerm_public_ip.taro-production-reverse-proxy-public-ip.id
+}
