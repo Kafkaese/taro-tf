@@ -284,17 +284,7 @@ resource "azurerm_container_group" "container-instance-frontend" {
       port     = 80
       protocol = "TCP"
     }
-
-    volume {
-      name                 = "sslshare"
-      mount_path           = "/etc/letsencrypt/live/arms-tracker.app"
-      storage_account_name = azurerm_storage_account.ssl-storage.name
-      share_name           = azurerm_storage_share.ssl-certificate-share.name
-      storage_account_key  = azurerm_storage_account.ssl-storage.primary_access_key 
-      read_only            = false
-    }
   }
-
 
   tags = {
     environment = var.environment
@@ -306,81 +296,6 @@ resource "azurerm_container_group" "container-instance-frontend" {
     ]
   }
 }
-
-# Storage Account Private Service Endpoint Config
-
-# Storage account for certificates
-resource "azurerm_storage_account" "ssl-storage" {
-  name                          = "tarossl"
-  resource_group_name           = var.resource_group_name
-  location                      = var.resource_group_location
-  account_tier                  = "Standard"
-  account_replication_type      = "LRS"
-  
-  network_rules {
-    default_action             = "Deny"
-    virtual_network_subnet_ids = [ azurerm_subnet.storage-endpoint-subnet.id, azurerm_subnet.frontend_subnet.id ]
-    ip_rules = [ var.dev_ip ]
-    bypass = [ "None" ]
-  }
-}
-
-
-# Storage share to mount to the frontend container
-resource "azurerm_storage_share" "ssl-certificate-share" {
-  name                 = "ssl-certificate-share"
-  storage_account_name = azurerm_storage_account.ssl-storage.name
-  quota                = 1
-
-  acl {
-    id = var.container_registry_credential_user
-
-    access_policy {
-      permissions = "rwdl"
-    }
-  } 
-}
-
-
-# Subnet for the Storage Account
-resource "azurerm_subnet" "storage-endpoint-subnet" {
-  name                 = "storage-endpoint-subnet"
-  address_prefixes     = ["10.0.4.0/24"]
-  virtual_network_name = azurerm_virtual_network.taro_production_vnet.name
-  resource_group_name  = var.resource_group_name 
-  private_endpoint_network_policies_enabled = true
-  service_endpoints = [ "Microsoft.Storage" ]
-}
-
-# DNS Record for service endpoint
-resource "azurerm_private_dns_a_record" "storage-endpoint-dns-record" {
-  name                = "storage-endpoint-dns-record"
-  zone_name           = azurerm_private_dns_zone.taro_dns_zone.name
-  resource_group_name = var.resource_group_name
-  ttl                 = 300
-  records             = [azurerm_private_endpoint.taro-storage-endpoint.private_service_connection.0.private_ip_address]
-}
-
-# Private Service Endpoint
-resource "azurerm_private_endpoint" "taro-storage-endpoint" {
-  name                = "taro-storage-endpoint"
-  location            = var.resource_group_location
-  resource_group_name = var.resource_group_name
-  subnet_id           = azurerm_subnet.storage-endpoint-subnet.id
-
-  private_service_connection {
-    name                           = "sc-sta"
-    private_connection_resource_id = azurerm_storage_account.ssl-storage.id
-    subresource_names              = ["blob"]
-    is_manual_connection           = false
-  }
-
-  private_dns_zone_group {
-    name                 = "dns-group-sta"
-    private_dns_zone_ids = [azurerm_private_dns_zone.taro_dns_zone.id]
-  }
-}
-
 
 ### Reverse proxy
 
@@ -449,6 +364,18 @@ resource "azurerm_network_security_group" "my_terraform_nsg" {
     source_port_range          = "*"
     destination_port_range     = "22"
     source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
+
+  security_rule {
+    name = "HTTPS"
+    priority = 1011
+    direction = "Inbound"
+    access = "Allow"
+    protocol = "Tcp"
+    source_port_range = "*"
+    destination_port_range = "443"
+    source_address_prefix = "*"
     destination_address_prefix = "*"
   }
 }
