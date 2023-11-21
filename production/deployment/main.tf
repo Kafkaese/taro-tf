@@ -394,6 +394,7 @@ resource "azurerm_network_interface" "reverse-proxy-nic" {
     name                          = "internal"
     subnet_id                     = azurerm_subnet.rp-subnet.id
     private_ip_address_allocation = "Dynamic"
+    public_ip_address_id          = var.rp_vm_public_ip_id
   }
 }
 
@@ -412,6 +413,7 @@ resource "azurerm_linux_virtual_machine" "rp_vm" {
   resource_group_name   = var.resource_group_name
   network_interface_ids = [azurerm_network_interface.reverse-proxy-nic.id]
   size                  = "Standard_B1s"
+  
 
   os_disk {
     caching              = "ReadWrite"
@@ -432,3 +434,27 @@ resource "azurerm_linux_virtual_machine" "rp_vm" {
 
 }
 
+# Create Network Security Group and rule
+resource "azurerm_network_security_group" "my_terraform_nsg" {
+  name                = "myNetworkSecurityGroup"
+  location            = var.resource_group_location
+  resource_group_name = var.resource_group_name
+
+  security_rule {
+    name                       = "SSH"
+    priority                   = 1001
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "22"
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
+}
+
+# Connect the security group to the network interface
+resource "azurerm_network_interface_security_group_association" "example" {
+  network_interface_id      = azurerm_network_interface.reverse-proxy-nic.id
+  network_security_group_id = azurerm_network_security_group.my_terraform_nsg.id
+}

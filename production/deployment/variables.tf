@@ -81,3 +81,6 @@ variable "dev_ip" {
 variable "rp_vm_admin_password" {
   sensitive  = true
 }
+
+variable "rp_vm_public_ip_id" {
+}
