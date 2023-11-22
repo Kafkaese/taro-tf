@@ -85,44 +85,6 @@ resource "azurerm_subnet" "backend_subnet" {
   }
 }
 
-# Load balancer for API
-resource "azurerm_lb" "taro-production-lb" {
-  name                = "taro-production-load-balancer"
-  location            = var.resource_group_location
-  resource_group_name = var.resource_group_name
-  sku                 = "Standard"
-
-  frontend_ip_configuration {
-    name                 = "PublicIPAddress"
-    public_ip_address_id = var.api_ip_id
-  }
-}
-
-# IP address pool for api load balancer
-resource "azurerm_lb_backend_address_pool" "taro-production-lb-address-pool" {
-  name            = "taro-api-pool"
-  loadbalancer_id = azurerm_lb.taro-production-lb.id
-}
-
-# API address for lb address pool
-resource "azurerm_lb_backend_address_pool_address" "taro-production-api-container-ip-address" {
-  name                    = "taro-production-api-container-ip-address"
-  backend_address_pool_id = azurerm_lb_backend_address_pool.taro-production-lb-address-pool.id
-  virtual_network_id      = azurerm_virtual_network.taro_production_vnet.id
-  ip_address              = azurerm_container_group.container-instance-api.ip_address
-}
-
-# Load balancer rule
-resource "azurerm_lb_rule" "example" {
-  loadbalancer_id                = azurerm_lb.taro-production-lb.id
-  name                           = "HTTP"
-  protocol                       = "Tcp"
-  frontend_port                  = 80
-  backend_port                   = 8000
-  frontend_ip_configuration_name = "PublicIPAddress"
-  backend_address_pool_ids       = [ azurerm_lb_backend_address_pool.taro-production-lb-address-pool.id ]
-}
-
 # Container Instance for the api
 resource "azurerm_container_group" "container-instance-api" {
   name                = var.container_group_name_api
@@ -163,7 +125,6 @@ resource "azurerm_container_group" "container-instance-api" {
       POSTGRES_DB=var.postgres_database
       POSTGRES_USER=var.postgres_user
       POSTGRES_PASSWORD=var.postgres_password
-      REACT_HOST=var.frontend_ip_address
       LOG_PATH="./Log"
     }
 
@@ -191,6 +152,7 @@ resource "azurerm_subnet" "frontend_subnet" {
   resource_group_name  = var.resource_group_name
   virtual_network_name = azurerm_virtual_network.taro_production_vnet.name
   address_prefixes     = ["10.0.3.0/24"]
+
   delegation {
     name = "frontend"
     service_delegation {
@@ -200,44 +162,8 @@ resource "azurerm_subnet" "frontend_subnet" {
       ]
     }
   }
-}
-
-# Load balancer for Frontend
-resource "azurerm_lb" "taro-production-frontend-lb" {
-  name                = "taro-production-frontend-load-balancer"
-  location            = var.resource_group_location
-  resource_group_name = var.resource_group_name
-  sku                 = "Standard"
-
-  frontend_ip_configuration {
-    name                 = "PublicFrontendIPAddress"
-    public_ip_address_id = var.frontend_ip_id
-  }
-}
-
-# IP address pool for frontend load balancer
-resource "azurerm_lb_backend_address_pool" "taro-production-frontend-lb-address-pool" {
-  name            = "taro-frontend-pool"
-  loadbalancer_id = azurerm_lb.taro-production-frontend-lb.id
-}
-
-# Frontend address for lb address pool
-resource "azurerm_lb_backend_address_pool_address" "taro-production-frontend-container-ip-address" {
-  name                    = "taro-production-frontend-container-ip-address"
-  backend_address_pool_id = azurerm_lb_backend_address_pool.taro-production-frontend-lb-address-pool.id
-  virtual_network_id      = azurerm_virtual_network.taro_production_vnet.id
-  ip_address              = azurerm_container_group.container-instance-frontend.ip_address
-}
-
-# Load balancer rule
-resource "azurerm_lb_rule" "taro-production-frontend-lb-rule" {
-  loadbalancer_id                = azurerm_lb.taro-production-frontend-lb.id
-  name                           = "HTTP"
-  protocol                       = "Tcp"
-  frontend_port                  = 80
-  backend_port                   = 80
-  frontend_ip_configuration_name = "PublicFrontendIPAddress"
-  backend_address_pool_ids       = [ azurerm_lb_backend_address_pool.taro-production-frontend-lb-address-pool.id ]
+  
+  service_endpoints = [ "Microsoft.Storage" ]
 }
 
 # Container Instance for the frontend
@@ -248,6 +174,7 @@ resource "azurerm_container_group" "container-instance-frontend" {
   subnet_ids          = [ azurerm_subnet.frontend_subnet.id ]
   ip_address_type     = "Private"
   os_type             = "Linux"
+
   image_registry_credential {
     username = var.container_registry_credential_user
     password = var.container_registry_credential_password
@@ -261,7 +188,7 @@ resource "azurerm_container_group" "container-instance-frontend" {
     memory = "1.5"
     environment_variables = {
       ENV=var.environment
-      REACT_APP_API_HOST=var.api_ip_address
+      REACT_APP_API_HOST=var.api_host
       REACT_APP_API_PORT=var.api_port
     }
 
@@ -280,4 +207,93 @@ resource "azurerm_container_group" "container-instance-frontend" {
       null_resource.always_run
     ]
   }
+}
+
+### Reverse proxy
+
+# NIC for reverse proxy vm
+resource "azurerm_network_interface" "reverse-proxy-nic" {
+  name                = "taro-production-reverse-proxy-nic"
+  location            = var.resource_group_location
+  resource_group_name = var.resource_group_name
+
+  ip_configuration {
+    name                          = "internal"
+    subnet_id                     = azurerm_subnet.rp-subnet.id
+    private_ip_address_allocation = "Dynamic"
+    public_ip_address_id          = var.rp_vm_public_ip_id
+  }
+}
+
+# Reverse proxy subnet
+resource "azurerm_subnet" "rp-subnet" {
+  name = "taro-production-reverse-proxy-subnet"
+  resource_group_name = var.resource_group_name
+  virtual_network_name = azurerm_virtual_network.taro_production_vnet.name
+  address_prefixes = [ "10.0.5.0/24" ]
+}
+
+# Reverse Proxy VM
+resource "azurerm_linux_virtual_machine" "rp_vm" {
+  name                  = "taro-production-reverse-proxy"
+  location              = var.resource_group_location
+  resource_group_name   = var.resource_group_name
+  network_interface_ids = [azurerm_network_interface.reverse-proxy-nic.id]
+  size                  = "Standard_B1s"
+  
+
+  os_disk {
+    caching              = "ReadWrite"
+    storage_account_type = "Standard_LRS"
+  }
+
+  source_image_reference {
+    publisher = "Canonical"
+    offer     = "UbuntuServer"
+    sku       = "18_04-lts-gen2"
+    version   = "latest"
+  }
+
+  computer_name                   = "taro-production-reverse-proxy"
+  admin_username                  = "adminuser"
+  admin_password                  = var.rp_vm_admin_password
+  disable_password_authentication = false
+
+}
+
+# Create Network Security Group and rule
+resource "azurerm_network_security_group" "my_terraform_nsg" {
+  name                = "myNetworkSecurityGroup"
+  location            = var.resource_group_location
+  resource_group_name = var.resource_group_name
+
+  security_rule {
+    name                       = "SSH"
+    priority                   = 1001
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "22"
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
+
+  security_rule {
+    name = "HTTPS"
+    priority = 1011
+    direction = "Inbound"
+    access = "Allow"
+    protocol = "Tcp"
+    source_port_range = "*"
+    destination_port_range = "443"
+    source_address_prefix = "*"
+    destination_address_prefix = "*"
+  }
+}
+
+# Connect the security group to the network interface
+resource "azurerm_network_interface_security_group_association" "example" {
+  network_interface_id      = azurerm_network_interface.reverse-proxy-nic.id
+  network_security_group_id = azurerm_network_security_group.my_terraform_nsg.id
 }

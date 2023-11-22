@@ -59,17 +59,19 @@ variable "postgres_database" {
 }
 
 variable "api_port" {
-  default = "80"
+  default = "443"
 }
 
-variable "api_ip_address" { 
+variable "dev_ip" {
+  default = "public IP address for dev access"
 }
 
-variable "api_ip_id" {
+variable "rp_vm_admin_password" {
+  sensitive  = true
 }
 
-variable "frontend_ip_address" { 
+variable "rp_vm_public_ip_id" {
 }
 
-variable "frontend_ip_id" {
+variable "api_host" {
 }
