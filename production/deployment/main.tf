@@ -205,55 +205,6 @@ resource "azurerm_subnet" "frontend_subnet" {
   service_endpoints = [ "Microsoft.Storage" ]
 }
 
-# Load balancer for Frontend
-resource "azurerm_lb" "taro-production-frontend-lb" {
-  name                = "taro-production-frontend-load-balancer"
-  location            = var.resource_group_location
-  resource_group_name = var.resource_group_name
-  sku                 = "Standard"
-
-  frontend_ip_configuration {
-    name                 = "PublicFrontendIPAddress"
-    public_ip_address_id = var.frontend_ip_id
-  }
-}
-
-# IP address pool for frontend load balancer
-resource "azurerm_lb_backend_address_pool" "taro-production-frontend-lb-address-pool" {
-  name            = "taro-frontend-pool"
-  loadbalancer_id = azurerm_lb.taro-production-frontend-lb.id
-}
-
-# Frontend address for lb address pool
-resource "azurerm_lb_backend_address_pool_address" "taro-production-frontend-container-ip-address" {
-  name                    = "taro-production-frontend-container-ip-address"
-  backend_address_pool_id = azurerm_lb_backend_address_pool.taro-production-frontend-lb-address-pool.id
-  virtual_network_id      = azurerm_virtual_network.taro_production_vnet.id
-  ip_address              = azurerm_container_group.container-instance-frontend.ip_address
-}
-
-# Load balancer rule
-resource "azurerm_lb_rule" "taro-production-frontend-lb-rule" {
-  loadbalancer_id                = azurerm_lb.taro-production-frontend-lb.id
-  name                           = "HTTP"
-  protocol                       = "Tcp"
-  frontend_port                  = 80
-  backend_port                   = 80
-  frontend_ip_configuration_name = "PublicFrontendIPAddress"
-  backend_address_pool_ids       = [ azurerm_lb_backend_address_pool.taro-production-frontend-lb-address-pool.id ]
-}
-
-# Load balancer rule
-resource "azurerm_lb_rule" "taro-production-frontend-lb-rule-https" {
-  loadbalancer_id                = azurerm_lb.taro-production-frontend-lb.id
-  name                           = "HTTPS"
-  protocol                       = "Tcp"
-  frontend_port                  = 443
-  backend_port                   = 443
-  frontend_ip_configuration_name = "PublicFrontendIPAddress"
-  backend_address_pool_ids       = [ azurerm_lb_backend_address_pool.taro-production-frontend-lb-address-pool.id ]
-}
-
 # Container Instance for the frontend
 resource "azurerm_container_group" "container-instance-frontend" {
   name                = var.container_group_name_frontend
