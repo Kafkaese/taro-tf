@@ -62,18 +62,6 @@ variable "api_port" {
   default = "443"
 }
 
-variable "api_ip_address" { 
-}
-
-variable "api_ip_id" {
-}
-
-variable "frontend_ip_address" { 
-}
-
-variable "frontend_ip_id" {
-}
-
 variable "dev_ip" {
   default = "public IP address for dev access"
 }
