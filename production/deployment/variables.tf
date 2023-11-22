@@ -59,7 +59,7 @@ variable "postgres_database" {
 }
 
 variable "api_port" {
-  default = "80"
+  default = "443"
 }
 
 variable "api_ip_address" { 
@@ -83,4 +83,7 @@ variable "rp_vm_admin_password" {
 }
 
 variable "rp_vm_public_ip_id" {
+}
+
+variable "api_host" {
 }
