@@ -85,44 +85,6 @@ resource "azurerm_subnet" "backend_subnet" {
   }
 }
 
-# Load balancer for API
-resource "azurerm_lb" "taro-production-lb" {
-  name                = "taro-production-load-balancer"
-  location            = var.resource_group_location
-  resource_group_name = var.resource_group_name
-  sku                 = "Standard"
-
-  frontend_ip_configuration {
-    name                 = "PublicIPAddress"
-    public_ip_address_id = var.api_ip_id
-  }
-}
-
-# IP address pool for api load balancer
-resource "azurerm_lb_backend_address_pool" "taro-production-lb-address-pool" {
-  name            = "taro-api-pool"
-  loadbalancer_id = azurerm_lb.taro-production-lb.id
-}
-
-# API address for lb address pool
-resource "azurerm_lb_backend_address_pool_address" "taro-production-api-container-ip-address" {
-  name                    = "taro-production-api-container-ip-address"
-  backend_address_pool_id = azurerm_lb_backend_address_pool.taro-production-lb-address-pool.id
-  virtual_network_id      = azurerm_virtual_network.taro_production_vnet.id
-  ip_address              = azurerm_container_group.container-instance-api.ip_address
-}
-
-# Load balancer rule
-resource "azurerm_lb_rule" "example" {
-  loadbalancer_id                = azurerm_lb.taro-production-lb.id
-  name                           = "HTTP"
-  protocol                       = "Tcp"
-  frontend_port                  = 80
-  backend_port                   = 8000
-  frontend_ip_configuration_name = "PublicIPAddress"
-  backend_address_pool_ids       = [ azurerm_lb_backend_address_pool.taro-production-lb-address-pool.id ]
-}
-
 # Container Instance for the api
 resource "azurerm_container_group" "container-instance-api" {
   name                = var.container_group_name_api
