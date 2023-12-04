@@ -11,6 +11,10 @@ resource "azurerm_storage_account" "storage" {
   location = azurerm_resource_group.rg.location
   account_tier = "Standard"
   account_replication_type = "LRS"
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 # Container regsitry for all containers in the production environemtn (api, frontend and pipeline)
@@ -27,18 +31,30 @@ resource "azurerm_storage_container" "production-backend" {
   name                  = "terraform-production-env"
   storage_account_name  = azurerm_storage_account.storage.name
   container_access_type = "private"
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 resource "azurerm_storage_container" "staging-backend" {
   name                  = "terraform-staging-env"
   storage_account_name  = azurerm_storage_account.storage.name
   container_access_type = "private"
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 resource "azurerm_storage_container" "test-backend" {
   name                  = "terraform-test-env"
   storage_account_name  = azurerm_storage_account.storage.name
   container_access_type = "private"
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 resource "azurerm_public_ip" "taro-production-reverse-proxy-public-ip" {
