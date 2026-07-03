@@ -111,3 +111,65 @@ resource "aws_vpc_security_group_egress_rule" "lambda_to_postgres" {
   ip_protocol                  = "tcp"
   description                  = "Postgres"
 }
+
+data "aws_caller_identity" "current" {}
+
+# IAM role for the Postgres EC2 instance. Trust policy only allows the EC2
+# service itself to assume it (this is what lets an EC2 instance use the
+# role at all, via its instance profile).
+resource "aws_iam_role" "postgres_instance" {
+  name = "taro-production-postgres"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect    = "Allow"
+      Principal = { Service = "ec2.amazonaws.com" }
+      Action    = "sts:AssumeRole"
+    }]
+  })
+}
+
+# Lets you get a shell on the instance via SSM Session Manager instead of
+# SSH — no open port 22, no key pair to manage, no public-IP allowlisting.
+resource "aws_iam_role_policy_attachment" "postgres_instance_ssm" {
+  role       = aws_iam_role.postgres_instance.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+}
+
+# Read-only ECR access, scoped to repos following our "taro-*" naming
+# convention rather than the AWS-managed AmazonEC2ContainerRegistryReadOnly
+# policy, which would grant read access to any ECR repo in the account.
+# GetAuthorizationToken is an account-level action that doesn't support
+# resource-level restriction, so it's the one exception with Resource "*".
+resource "aws_iam_role_policy" "postgres_instance_ecr_read" {
+  name = "taro-ecr-read"
+  role = aws_iam_role.postgres_instance.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid      = "EcrAuth"
+        Effect   = "Allow"
+        Action   = "ecr:GetAuthorizationToken"
+        Resource = "*"
+      },
+      {
+        Sid    = "EcrPullTaroRepos"
+        Effect = "Allow"
+        Action = [
+          "ecr:BatchCheckLayerAvailability",
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:BatchGetImage",
+        ]
+        Resource = "arn:aws:ecr:${var.aws_region}:${data.aws_caller_identity.current.account_id}:repository/taro-*"
+      },
+    ]
+  })
+}
+
+resource "aws_iam_instance_profile" "postgres_instance" {
+  name = "taro-production-postgres"
+  role = aws_iam_role.postgres_instance.name
+}
