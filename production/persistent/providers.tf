@@ -2,10 +2,10 @@
 # using its outputs (see envs/bootstrap/README.md), e.g.:
 #
 # backend "s3" {
-#   bucket         = "<state_bucket_name output>"
+#   bucket         = "taro-tfstate-cb4c175e"
 #   key            = "persistent.tfstate"
-#   region         = "<aws_region output>"
-#   dynamodb_table = "<lock_table_name output>"
+#   region         = "eu-central-1"
+#   dynamodb_table = "taro-tfstate-cb4c175e"
 #   encrypt        = true
 # }
 #
