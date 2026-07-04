@@ -23,9 +23,9 @@ resource "aws_iam_role_policy_attachment" "postgres_instance_ssm" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
 }
 
-# Read-only ECR access, scoped to repos following our "taro-*" naming
-# convention rather than the AWS-managed AmazonEC2ContainerRegistryReadOnly
-# policy, which would grant read access to any ECR repo in the account.
+# Read-only ECR access, scoped to exactly the one shared "taro" repository
+# rather than the AWS-managed AmazonEC2ContainerRegistryReadOnly policy,
+# which would grant read access to any ECR repo in the account.
 # GetAuthorizationToken is an account-level action that doesn't support
 # resource-level restriction, so it's the one exception with Resource "*".
 resource "aws_iam_role_policy" "postgres_instance_ecr_read" {
@@ -49,7 +49,7 @@ resource "aws_iam_role_policy" "postgres_instance_ecr_read" {
           "ecr:GetDownloadUrlForLayer",
           "ecr:BatchGetImage",
         ]
-        Resource = "arn:aws:ecr:${var.aws_region}:${data.aws_caller_identity.current.account_id}:repository/taro-*"
+        Resource = aws_ecr_repository.taro.arn
       },
     ]
   })
