@@ -1,0 +1,51 @@
+#!/bin/bash
+set -euo pipefail
+
+dnf install -y docker
+systemctl enable --now docker
+
+# Amazon Linux 2023 ships the AWS CLI by default, but install it if that
+# ever isn't the case rather than fail here.
+command -v aws >/dev/null 2>&1 || dnf install -y awscli
+
+# The attached data volume shows up as /dev/sdf on some kernels and
+# /dev/xvdf on others - wait for whichever one actually appears.
+DEVICE=""
+for _ in $(seq 1 30); do
+  if [ -e /dev/xvdf ]; then DEVICE=/dev/xvdf; break; fi
+  if [ -e /dev/sdf ]; then DEVICE=/dev/sdf; break; fi
+  sleep 1
+done
+
+# Only format the volume the first time it's ever used. This EBS volume has
+# prevent_destroy set in Terraform specifically so it survives EC2 instance
+# replacement - if this script ran mkfs unconditionally on every boot, a
+# routine instance replacement would wipe the Postgres data it's meant to
+# protect.
+if ! blkid "$DEVICE" >/dev/null 2>&1; then
+  mkfs -t ext4 "$DEVICE"
+fi
+
+mkdir -p /data/postgres
+mount "$DEVICE" /data/postgres
+grep -q "$DEVICE" /etc/fstab || echo "$DEVICE /data/postgres ext4 defaults,nofail 0 2" >> /etc/fstab
+
+# Fetched at boot from SSM rather than baked into user-data, so the plaintext
+# password never sits in the instance's user-data/metadata - only this
+# instance's IAM role, scoped to this one parameter, can read it.
+POSTGRES_PASSWORD=$(aws ssm get-parameter \
+  --name '${postgres_password_param}' \
+  --with-decryption \
+  --region '${aws_region}' \
+  --query 'Parameter.Value' \
+  --output text)
+
+docker run -d \
+  --name taro-postgres \
+  --restart unless-stopped \
+  -p 5432:5432 \
+  -e POSTGRES_USER='${postgres_user}' \
+  -e POSTGRES_PASSWORD="$POSTGRES_PASSWORD" \
+  -e POSTGRES_DB='${postgres_db}' \
+  -v /data/postgres:/var/lib/postgresql/data \
+  postgres:16
