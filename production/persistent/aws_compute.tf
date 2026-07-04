@@ -57,6 +57,13 @@ resource "aws_instance" "postgres" {
     aws_region              = var.aws_region
   })
 
+  # cloud-init only ever runs user-data on an instance's first boot, so by
+  # default Terraform treats a user_data change as a harmless metadata
+  # update on the existing instance rather than something that needs to
+  # take effect. This script needs to actually re-run whenever it changes,
+  # so force a replacement instead.
+  user_data_replace_on_change = true
+
   tags = {
     Name = "taro-production-postgres"
   }
