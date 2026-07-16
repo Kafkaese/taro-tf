@@ -89,6 +89,29 @@ resource "aws_iam_role_policy" "postgres_instance_ssm_param" {
   })
 }
 
+resource "aws_iam_role_policy" "postgres_instance_s3_data_read" {
+  name = "taro-s3-pipeline-data-read"
+  role = aws_iam_role.postgres_instance.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid      = "ListPipelineDataBucket"
+        Effect   = "Allow"
+        Action   = "s3:ListBucket"
+        Resource = aws_s3_bucket.pipeline_data.arn
+      },
+      {
+        Sid      = "ReadPipelineDataObjects"
+        Effect   = "Allow"
+        Action   = "s3:GetObject"
+        Resource = "${aws_s3_bucket.pipeline_data.arn}/*"
+      },
+    ]
+  })
+}
+
 resource "aws_iam_instance_profile" "postgres_instance" {
   name = "taro-production-postgres"
   role = aws_iam_role.postgres_instance.name
