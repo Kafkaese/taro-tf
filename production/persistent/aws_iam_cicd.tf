@@ -6,11 +6,14 @@ resource "aws_iam_openid_connect_provider" "github_actions" {
   url            = "https://token.actions.githubusercontent.com"
   client_id_list = ["sts.amazonaws.com"]
 
-  # GitHub's own leaf certificate rotates periodically; this is the
-  # thumbprint of the root CA it chains up to instead, which is what AWS's
-  # documentation recommends specifically because it doesn't change when
-  # GitHub rotates its own certs.
-  thumbprint_list = ["6938fd4d98bab03faadb97b34396831e3780aea"]
+  # GitHub's own leaf certificate rotates periodically (currently issued by
+  # Let's Encrypt); this is the thumbprint of ISRG Root X1, the root CA the
+  # chain traces up to, verified directly against the live chain presented
+  # by token.actions.githubusercontent.com (openssl s_client -connect
+  # token.actions.githubusercontent.com:443 -showcerts). Pinning to the
+  # root instead of the leaf means routine cert renewals don't break this -
+  # only an actual change of certificate authority would.
+  thumbprint_list = ["ab9d0263244dd0326eb67015705a667e79cfe998"]
 }
 
 # Scoped to exactly one repo, one branch: only taro-data's main branch can
