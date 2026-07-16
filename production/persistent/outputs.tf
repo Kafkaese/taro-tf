@@ -9,3 +9,7 @@ output "public_subnet_id" {
 output "ecr_repository_url" {
   value = aws_ecr_repository.taro.repository_url
 }
+
+output "pipeline_data_bucket" {
+  value = aws_s3_bucket.pipeline_data.bucket
+}

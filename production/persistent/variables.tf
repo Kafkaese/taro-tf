@@ -19,11 +19,6 @@ variable "postgres_user" {
   description = "Postgres superuser name."
 }
 
-variable "postgres_password" {
-  sensitive   = true
-  description = "Postgres superuser password. No default on purpose - set it via TF_VAR_postgres_password or a gitignored terraform.tfvars, never a committed literal."
-}
-
 variable "postgres_database" {
   default     = "taro"
   description = "Name of the application database created inside Postgres."

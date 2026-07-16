@@ -5,6 +5,20 @@ data "aws_ssm_parameter" "al2023_arm64" {
   name = "/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-arm64"
 }
 
+# Generated once and stable across future applies (same behavior as the
+# random_id used for the state bucket suffix in envs/bootstrap) - nothing
+# rotates it without an explicit `terraform apply -replace`. Alphanumeric
+# only, deliberately: the password flows through a raw connection URI in
+# pipeline.py and a double-quoted shell variable in the instance boot
+# script, neither of which escapes special characters, so this sidesteps an
+# entire category of bugs rather than working around it after the fact.
+# 32 alphanumeric characters is ~190 bits of entropy - far more than the
+# security requirement actually needs, so nothing is lost by restricting it.
+resource "random_password" "postgres" {
+  length  = 32
+  special = false
+}
+
 # Holds the Postgres password so it never has to be embedded in plaintext in
 # the EC2 instance's user-data/metadata. SSM encrypts SecureString values at
 # rest with a KMS key; only the instance's own IAM role (see aws_iam.tf) can
@@ -12,7 +26,7 @@ data "aws_ssm_parameter" "al2023_arm64" {
 resource "aws_ssm_parameter" "postgres_password" {
   name  = "/taro/production/postgres_password"
   type  = "SecureString"
-  value = var.postgres_password
+  value = random_password.postgres.result
 
   tags = {
     Name = "taro-production-postgres-password"
