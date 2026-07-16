@@ -13,3 +13,7 @@ output "ecr_repository_url" {
 output "pipeline_data_bucket" {
   value = aws_s3_bucket.pipeline_data.bucket
 }
+
+output "github_actions_pipeline_build_role_arn" {
+  value = aws_iam_role.github_actions_pipeline_build.arn
+}
