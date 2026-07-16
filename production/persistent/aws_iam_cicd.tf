@@ -22,11 +22,12 @@ resource "aws_iam_openid_connect_provider" "github_actions" {
 resource "aws_iam_role" "github_actions_pipeline_build" {
   name = "taro-github-actions-pipeline-build"
 
-  # Ceiling on how long any assumed session can last, enforced by AWS
-  # itself - not just "what the workflow happens to request today". The
-  # build+push job only takes a couple of minutes; 900s (the AWS minimum)
-  # is already generous for it.
-  max_session_duration = 900
+  # This is a ceiling, not the actual session length - AWS restricts role-
+  # level max_session_duration to 3600-43200s (1-12h), it can't go lower.
+  # The workflow requests the real, shorter duration it actually wants via
+  # role-duration-seconds (900s / 15min); this just caps how long a session
+  # could ever be if something assumed the role without specifying that.
+  max_session_duration = 3600
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
