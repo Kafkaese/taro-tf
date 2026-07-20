@@ -77,3 +77,60 @@ resource "aws_iam_role_policy" "github_actions_pipeline_build_ecr_push" {
     ]
   })
 }
+
+# Separate identity from github_actions_pipeline_build even though the
+# actual AWS permissions boundary ends up identical (push to the same taro
+# repo, from the same repo+branch) - keeping one role per workflow means
+# either one's access can be revoked independently without touching the
+# other, matching the same "one identity per concern" pattern used for the
+# EC2 instance role vs. this CI role.
+resource "aws_iam_role" "github_actions_api_build" {
+  name = "taro-github-actions-api-build"
+
+  max_session_duration = 3600
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect    = "Allow"
+      Principal = { Federated = aws_iam_openid_connect_provider.github_actions.arn }
+      Action    = "sts:AssumeRoleWithWebIdentity"
+      Condition = {
+        StringEquals = {
+          "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
+          "token.actions.githubusercontent.com:sub" = "repo:Kafkaese/taro-data:ref:refs/heads/main"
+        }
+      }
+    }]
+  })
+}
+
+resource "aws_iam_role_policy" "github_actions_api_build_ecr_push" {
+  name = "taro-ecr-push"
+  role = aws_iam_role.github_actions_api_build.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid      = "EcrAuth"
+        Effect   = "Allow"
+        Action   = "ecr:GetAuthorizationToken"
+        Resource = "*"
+      },
+      {
+        Sid    = "EcrPushTaroRepo"
+        Effect = "Allow"
+        Action = [
+          "ecr:BatchCheckLayerAvailability",
+          "ecr:InitiateLayerUpload",
+          "ecr:UploadLayerPart",
+          "ecr:CompleteLayerUpload",
+          "ecr:PutImage",
+          "ecr:BatchGetImage",
+        ]
+        Resource = aws_ecr_repository.taro.arn
+      },
+    ]
+  })
+}
