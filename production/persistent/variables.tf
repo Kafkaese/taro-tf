@@ -1,13 +1,30 @@
-variable "resource_group_location" {
-  default     = "francecentral"
-  description = "Location of the resource group."
+variable "aws_region" {
+  default     = "eu-central-1"
+  description = "AWS region for all taro production resources."
 }
 
-variable "resource_group_name" {
+variable "vpc_cidr" {
+  default     = "10.0.0.0/16"
+  description = "CIDR block for the taro production VPC."
+}
+
+variable "public_subnet_cidr" {
+  default     = "10.0.1.0/24"
+  description = "CIDR block for the public subnet holding the Postgres EC2 instance and the Lambda VPC attachment."
+}
+
+variable "postgres_user" {
+  default     = "postgres"
+  sensitive   = true
+  description = "Postgres superuser name."
+}
+
+variable "postgres_database" {
   default     = "taro"
-  description = "The resource group name."
+  description = "Name of the application database created inside Postgres."
 }
 
-variable "container_registry_name" {
-  default = "taroContainerRegistry"
+variable "postgres_data_volume_gb" {
+  default     = 20
+  description = "Size, in GB, of the EBS volume holding Postgres's data directory."
 }

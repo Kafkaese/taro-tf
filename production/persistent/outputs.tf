@@ -1,11 +1,19 @@
-output "resource_group_name" {
-  value = azurerm_resource_group.rg.name
+output "vpc_id" {
+  value = aws_vpc.taro.id
 }
 
-output "container_registry_name" {
-  value = azurerm_container_registry.container-registry.name
+output "public_subnet_id" {
+  value = aws_subnet.public.id
 }
 
-output "rp_vm_public_ip_id" {
-  value = azurerm_public_ip.taro-production-reverse-proxy-public-ip.id
+output "ecr_repository_url" {
+  value = aws_ecr_repository.taro.repository_url
+}
+
+output "pipeline_data_bucket" {
+  value = aws_s3_bucket.pipeline_data.bucket
+}
+
+output "github_actions_pipeline_build_role_arn" {
+  value = aws_iam_role.github_actions_pipeline_build.arn
 }
