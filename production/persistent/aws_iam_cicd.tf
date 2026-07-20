@@ -70,6 +70,7 @@ resource "aws_iam_role_policy" "github_actions_pipeline_build_ecr_push" {
           "ecr:UploadLayerPart",
           "ecr:CompleteLayerUpload",
           "ecr:PutImage",
+          "ecr:BatchGetImage",
         ]
         Resource = aws_ecr_repository.taro.arn
       },
