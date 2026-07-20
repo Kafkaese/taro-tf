@@ -1,18 +1,13 @@
-# TODO: once envs/bootstrap has been applied, add a backend "s3" block here
-# using its outputs (see envs/bootstrap/README.md), e.g.:
-#
-# backend "s3" {
-#   bucket         = "taro-tfstate-cb4c175e"
-#   key            = "persistent.tfstate"
-#   region         = "eu-central-1"
-#   dynamodb_table = "taro-tfstate-cb4c175e"
-#   encrypt        = true
-# }
-#
-# Until then this uses local state.
-
 terraform {
   required_version = ">=1.0"
+
+  backend "s3" {
+    bucket         = "taro-tfstate-cb4c175e"
+    key            = "persistent.tfstate"
+    region         = "eu-central-1"
+    dynamodb_table = "taro-terraform-locks"
+    encrypt        = true
+  }
 
   required_providers {
     aws = {
