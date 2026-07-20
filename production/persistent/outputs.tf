@@ -17,3 +17,7 @@ output "pipeline_data_bucket" {
 output "github_actions_pipeline_build_role_arn" {
   value = aws_iam_role.github_actions_pipeline_build.arn
 }
+
+output "github_actions_api_build_role_arn" {
+  value = aws_iam_role.github_actions_api_build.arn
+}
