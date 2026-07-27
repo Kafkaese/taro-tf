@@ -31,3 +31,29 @@ output "frontend_bucket_name" {
 output "frontend_website_endpoint" {
   value = "http://${google_storage_bucket.frontend.name}.storage.googleapis.com"
 }
+
+# Consumed by deployment/ (via terraform_remote_state) to wire the Lambda
+# into the same VPC/subnet and let it reach Postgres privately.
+output "lambda_security_group_id" {
+  value = aws_security_group.lambda.id
+}
+
+output "postgres_private_ip" {
+  value = aws_instance.postgres.private_ip
+}
+
+# Just the parameter's path, not its value - deployment/'s Lambda fetches
+# the actual password itself at runtime via its own IAM-scoped read, the
+# same pattern as the EC2 instance's boot script. Nothing sensitive here.
+output "postgres_password_ssm_parameter_name" {
+  value = aws_ssm_parameter.postgres_password.name
+}
+
+output "postgres_user" {
+  value     = var.postgres_user
+  sensitive = true
+}
+
+output "postgres_database" {
+  value = var.postgres_database
+}
