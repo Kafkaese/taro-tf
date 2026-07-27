@@ -55,3 +55,24 @@ resource "google_storage_bucket_iam_member" "frontend_deploy_write" {
   role   = "roles/storage.objectAdmin"
   member = "serviceAccount:${google_service_account.frontend_deploy.email}"
 }
+
+# `gcloud storage rsync` needs storage.buckets.list to resolve/validate the
+# gs://bucket-name reference before it'll sync anything - and that specific
+# permission is inherently project-scoped (bucket enumeration, not access
+# to a bucket's contents), unlike object read/write, so it can't be granted
+# via the bucket-level binding above no matter how the role is chosen. This
+# custom role grants only that one permission at the project level, rather
+# than widening to a broader predefined project role - actual data access
+# stays confined to the frontend bucket via frontend_deploy_write.
+resource "google_project_iam_custom_role" "frontend_deploy_bucket_list" {
+  role_id     = "taroFrontendDeployBucketList"
+  title       = "Taro frontend deploy - bucket list"
+  description = "Minimal project-level grant so gcloud storage rsync can resolve the frontend bucket reference; grants no access to bucket contents."
+  permissions = ["storage.buckets.list"]
+}
+
+resource "google_project_iam_member" "frontend_deploy_bucket_list" {
+  project = var.gcp_project_id
+  role    = google_project_iam_custom_role.frontend_deploy_bucket_list.id
+  member  = "serviceAccount:${google_service_account.frontend_deploy.email}"
+}
