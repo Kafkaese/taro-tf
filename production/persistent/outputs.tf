@@ -57,3 +57,11 @@ output "postgres_user" {
 output "postgres_database" {
   value = var.postgres_database
 }
+
+output "frontend_deploy_workload_identity_provider" {
+  value = google_iam_workload_identity_pool_provider.github_actions.name
+}
+
+output "frontend_deploy_service_account_email" {
+  value = google_service_account.frontend_deploy.email
+}
