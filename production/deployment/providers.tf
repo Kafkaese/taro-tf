@@ -14,12 +14,20 @@ terraform {
       source  = "hashicorp/aws"
       version = "~>5.0"
     }
+    cloudflare = {
+      source  = "cloudflare/cloudflare"
+      version = "~>4.0"
+    }
   }
 }
 
 provider "aws" {
   region = var.aws_region
 }
+
+# Auth via CLOUDFLARE_API_TOKEN env var, not an explicit argument here -
+# same reasoning as not hardcoding AWS credentials into a provider block.
+provider "cloudflare" {}
 
 data "aws_caller_identity" "current" {}
 
