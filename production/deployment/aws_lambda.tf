@@ -79,13 +79,11 @@ resource "aws_lambda_function" "api" {
     }
   }
 
-  lifecycle {
-    # New images are pushed under the same :api tag (see
-    # build-api-image.yaml) - the digest changes but Terraform has no way to
-    # know that without checking, and re-deploying on every unrelated apply
-    # would be surprising. Redeploy deliberately with
-    # `terraform apply -replace=aws_lambda_function.api` after a new image
-    # push, same pattern as the EC2 instance's AMI.
-    ignore_changes = [image_uri]
-  }
+  # Deliberately no ignore_changes on image_uri, unlike the EC2 instance's
+  # AMI: that field only ever changes because AWS republishes AMIs on its
+  # own schedule, outside anyone's control, which is what justifies ignoring
+  # it there. taro:api's digest only ever moves because of our own CI
+  # pushes, so a plain `terraform apply` picking up a new digest and doing
+  # an in-place UpdateFunctionCode is exactly the wanted behavior - not
+  # surprising drift to guard against.
 }
