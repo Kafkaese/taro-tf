@@ -1,20 +1,45 @@
-# Root and www both point at the GCS bucket's website endpoint. A CNAME at
-# the zone apex isn't valid plain DNS (the apex must carry SOA/NS records),
-# but Cloudflare "flattens" it transparently for proxied records, so this
-# works despite the underlying restriction.
+# Placeholder only - the page rule below redirects every apex request to
+# www before Cloudflare ever tries to actually reach this. 192.0.2.1 is a
+# reserved documentation-only address (RFC 5737), never a real destination;
+# it just needs to exist so there's a valid record to proxy. A real CNAME
+# to GCS doesn't work for the apex anyway once the bucket is named to match
+# www specifically (see cloudflare_record.www below) - GCS's classic
+# same-name-bucket hosting needs an exact bucket-name-to-Host-header match,
+# and a bucket can only be named one thing.
 resource "cloudflare_record" "root" {
   zone_id = var.cloudflare_zone_id
   name    = "@"
-  type    = "CNAME"
-  content = "${data.terraform_remote_state.persistent.outputs.frontend_bucket_name}.storage.googleapis.com"
+  type    = "A"
+  content = "192.0.2.1"
   proxied = true
 }
 
+resource "cloudflare_page_rule" "root_redirect" {
+  zone_id  = var.cloudflare_zone_id
+  target   = "arms-tracker.app/*"
+  priority = 1
+
+  actions {
+    forwarding_url {
+      url         = "https://www.arms-tracker.app/$1"
+      status_code = 301
+    }
+  }
+}
+
+# The frontend bucket is named exactly "www.arms-tracker.app" specifically
+# so GCS's classic same-name-bucket hosting applies: every such bucket
+# shares this one fixed CNAME target, and GCS identifies which bucket to
+# serve by matching the incoming Host header (which Cloudflare preserves
+# from the original request, not the CNAME target) against the bucket
+# name - rather than the virtual-hosted-style <bucket>.storage.googleapis.com
+# addressing, which breaks once a proxy sits in front and doesn't forward
+# a matching Host header. See MIGRATION.md for the full story on why.
 resource "cloudflare_record" "www" {
   zone_id = var.cloudflare_zone_id
   name    = "www"
   type    = "CNAME"
-  content = "${data.terraform_remote_state.persistent.outputs.frontend_bucket_name}.storage.googleapis.com"
+  content = "c.storage.googleapis.com"
   proxied = true
 }
 

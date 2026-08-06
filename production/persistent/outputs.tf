@@ -26,10 +26,15 @@ output "frontend_bucket_name" {
   value = google_storage_bucket.frontend.name
 }
 
-# The plain-HTTP endpoint Cloudflare will proxy to - not the bucket's GCS
-# console URL.
+# The bucket is named to exactly match its domain (www.arms-tracker.app),
+# so it uses GCS's classic same-name-bucket hosting: every such bucket
+# shares this one fixed CNAME target, and GCS tells them apart by matching
+# the (Cloudflare-preserved) Host header against the bucket name - not by
+# which storage.googleapis.com subdomain was hit, the way a virtual-hosted-
+# style URL would work. Purely informational; nothing else in this config
+# consumes it.
 output "frontend_website_endpoint" {
-  value = "http://${google_storage_bucket.frontend.name}.storage.googleapis.com"
+  value = "http://c.storage.googleapis.com"
 }
 
 # Consumed by deployment/ (via terraform_remote_state) to wire the Lambda
