@@ -59,6 +59,18 @@ output "postgres_user" {
   sensitive = true
 }
 
+# The Lambda passes this directly as a plain environment variable rather
+# than fetching it from SSM at runtime - it's VPC-attached with no NAT
+# Gateway and no VPC endpoint for SSM, so an in-VPC SSM call has no route
+# out and just hangs until Lambda's init-phase timeout kills it. Accepted
+# tradeoff for now: broader exposure (visible via lambda:GetFunctionConfiguration,
+# not just this function's own role) in exchange for not paying for a VPC
+# endpoint (~$7-8/mo) or a NAT Gateway (~$32+/mo). See MIGRATION.md.
+output "postgres_password" {
+  value     = random_password.postgres.result
+  sensitive = true
+}
+
 output "postgres_database" {
   value = var.postgres_database
 }
