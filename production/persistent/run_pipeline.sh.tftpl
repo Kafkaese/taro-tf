@@ -1,0 +1,21 @@
+#!/bin/bash
+set -euo pipefail
+
+REGION="${aws_region}"
+ECR_REPO="${ecr_repository_url}"
+ECR_REGISTRY="$${ECR_REPO%%/*}"
+
+aws ecr get-login-password --region "$REGION" | docker login --username AWS --password-stdin "$ECR_REGISTRY"
+
+docker pull "$ECR_REPO:pipeline"
+
+POSTGRES_PASSWORD=$(aws ssm get-parameter --name "${postgres_password_param}" --with-decryption --region "$REGION" --query 'Parameter.Value' --output text)
+
+docker run --rm --network host \
+  -e POSTGRES_HOST=localhost \
+  -e POSTGRES_PORT=5432 \
+  -e POSTGRES_USER="${postgres_user}" \
+  -e POSTGRES_PASSWORD="$POSTGRES_PASSWORD" \
+  -e POSTGRES_DB="${postgres_database}" \
+  -e S3_DATA_BUCKET="${pipeline_data_bucket}" \
+  "$ECR_REPO:pipeline"
