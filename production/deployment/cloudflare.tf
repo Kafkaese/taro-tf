@@ -43,22 +43,27 @@ resource "cloudflare_record" "www" {
   proxied = true
 }
 
-# api_endpoint includes the https:// scheme; a CNAME's content is just the
-# bare hostname.
+# Points at the custom domain's regional target, not the raw execute-api
+# endpoint - the raw endpoint validates the Host header against its own
+# hostname and 403s on a mismatch, which is exactly what broke this before
+# Cloudflare (preserving the original Host header) sat in front of it. The
+# custom domain object (aws_apigatewayv2_domain_name, in aws_api_gateway.tf)
+# is what actually accepts api.arms-tracker.app correctly.
 resource "cloudflare_record" "api" {
   zone_id = var.cloudflare_zone_id
   name    = "api"
   type    = "CNAME"
-  content = trimprefix(aws_apigatewayv2_api.api.api_endpoint, "https://")
+  content = aws_apigatewayv2_domain_name.api.domain_name_configuration[0].target_domain_name
   proxied = true
 }
 
 # Full (strict) works for both origins here - the GCS bucket's website
 # endpoint (*.storage.googleapis.com) carries a real Google Trust Services
-# wildcard cert, and API Gateway's default endpoint carries a real
-# AWS-managed cert, so there's no need to fall back to a weaker mode for
-# either leg (verified the GCS cert directly via openssl rather than
-# assuming it).
+# wildcard cert (verified directly via openssl rather than assumed), and
+# API Gateway's regional custom-domain target presents the ACM cert we
+# associated with it - that SNI-based cert serving is the actual point of
+# API Gateway custom domains, unlike the raw execute-api endpoint's
+# Host-header behavior, which wasn't designed to sit behind a proxy at all.
 resource "cloudflare_zone_settings_override" "this" {
   zone_id = var.cloudflare_zone_id
 

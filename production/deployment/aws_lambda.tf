@@ -22,37 +22,6 @@ resource "aws_iam_role_policy_attachment" "api_vpc_access" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
 }
 
-# Same pattern as postgres_instance_ssm_param in persistent/aws_iam.tf:
-# scoped to exactly this one parameter, and Decrypt is constrained to only
-# work when invoked via SSM rather than as a general-purpose grant.
-resource "aws_iam_role_policy" "api_ssm_param_read" {
-  name = "taro-ssm-param-read"
-  role = aws_iam_role.api.id
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Sid    = "ReadPostgresPasswordParam"
-        Effect = "Allow"
-        Action = "ssm:GetParameter"
-        Resource = "arn:aws:ssm:${var.aws_region}:${data.aws_caller_identity.current.account_id}:parameter${data.terraform_remote_state.persistent.outputs.postgres_password_ssm_parameter_name}"
-      },
-      {
-        Sid      = "DecryptViaSsmOnly"
-        Effect   = "Allow"
-        Action   = "kms:Decrypt"
-        Resource = "*"
-        Condition = {
-          StringEquals = {
-            "kms:ViaService" = "ssm.${var.aws_region}.amazonaws.com"
-          }
-        }
-      },
-    ]
-  })
-}
-
 resource "aws_lambda_function" "api" {
   function_name = "taro-production-api"
   role          = aws_iam_role.api.arn
@@ -72,11 +41,15 @@ resource "aws_lambda_function" "api" {
   environment {
     variables = {
       ENV                     = "production"
-      POSTGRES_HOST           = data.terraform_remote_state.persistent.outputs.postgres_private_ip
-      POSTGRES_PORT           = "5432"
-      POSTGRES_DB             = data.terraform_remote_state.persistent.outputs.postgres_database
-      POSTGRES_USER           = data.terraform_remote_state.persistent.outputs.postgres_user
-      POSTGRES_PASSWORD_PARAM = data.terraform_remote_state.persistent.outputs.postgres_password_ssm_parameter_name
+      POSTGRES_HOST     = data.terraform_remote_state.persistent.outputs.postgres_private_ip
+      POSTGRES_PORT     = "5432"
+      POSTGRES_DB       = data.terraform_remote_state.persistent.outputs.postgres_database
+      POSTGRES_USER     = data.terraform_remote_state.persistent.outputs.postgres_user
+      # Plain env var rather than an SSM fetch - the Lambda has no network
+      # path to SSM (VPC-attached, no NAT Gateway, no VPC endpoint), which
+      # was hanging the function until its init-phase timeout. Accepted
+      # tradeoff, see MIGRATION.md.
+      POSTGRES_PASSWORD = data.terraform_remote_state.persistent.outputs.postgres_password
     }
   }
 
