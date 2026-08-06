@@ -57,8 +57,9 @@ resource "aws_lambda_function" "api" {
   function_name = "taro-production-api"
   role          = aws_iam_role.api.arn
 
-  package_type = "Image"
-  image_uri    = "${data.terraform_remote_state.persistent.outputs.ecr_repository_url}:api"
+  package_type  = "Image"
+  image_uri     = "${data.terraform_remote_state.persistent.outputs.ecr_repository_url}:api"
+  architectures = ["arm64"]
 
   timeout     = 15
   memory_size = 512
