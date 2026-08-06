@@ -1,5 +1,5 @@
 resource "google_storage_bucket" "frontend" {
-  name          = "taro-frontend-${var.gcp_project_id}"
+  name          = "www.arms-tracker.app"
   location      = "EU"
   force_destroy = false
 
