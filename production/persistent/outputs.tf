@@ -47,6 +47,11 @@ output "postgres_private_ip" {
   value = aws_instance.postgres.private_ip
 }
 
+# For `aws ssm send-command --instance-ids <this> --document-name taro-run-pipeline`.
+output "postgres_instance_id" {
+  value = aws_instance.postgres.id
+}
+
 # Just the parameter's path, not its value - deployment/'s Lambda fetches
 # the actual password itself at runtime via its own IAM-scoped read, the
 # same pattern as the EC2 instance's boot script. Nothing sensitive here.
