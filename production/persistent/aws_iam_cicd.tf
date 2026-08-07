@@ -134,3 +134,29 @@ resource "aws_iam_role_policy" "github_actions_api_build_ecr_push" {
     ]
   })
 }
+
+# Lets this same CI identity flip either Lambda over to a newly-built image
+# directly via `aws lambda update-function-code --image-uri <repo>@<digest>`
+# once build-api-image.yaml resolves that digest - a plain `terraform apply`
+# can never detect that a moving tag now points somewhere new (the string
+# "<repo>:api" itself never changes), so this is CI's job now, not
+# Terraform's. Scoped to exactly these two function names; both Lambda
+# resources also carry `ignore_changes = [image_uri]` so Terraform never
+# fights this CI-driven deploy. See MIGRATION.md.
+resource "aws_iam_role_policy" "github_actions_api_build_lambda_deploy" {
+  name = "taro-lambda-deploy"
+  role = aws_iam_role.github_actions_api_build.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Sid    = "UpdateApiLambdaCode"
+      Effect = "Allow"
+      Action = "lambda:UpdateFunctionCode"
+      Resource = [
+        "arn:aws:lambda:${var.aws_region}:${data.aws_caller_identity.current.account_id}:function:taro-production-api",
+        "arn:aws:lambda:${var.aws_region}:${data.aws_caller_identity.current.account_id}:function:taro-dev-api",
+      ]
+    }]
+  })
+}
