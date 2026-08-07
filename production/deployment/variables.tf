@@ -4,5 +4,6 @@ variable "aws_region" {
 }
 
 variable "cloudflare_zone_id" {
+  default = "26887397546d136df6affac087dec083"
   description = "Zone ID for arms-tracker.app, from the Cloudflare dashboard's Overview page (right sidebar, under API). No default - set via TF_VAR_cloudflare_zone_id or a gitignored terraform.tfvars."
 }
