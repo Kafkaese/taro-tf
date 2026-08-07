@@ -86,3 +86,29 @@ resource "google_project_iam_member" "frontend_deploy_bucket_list" {
   role    = google_project_iam_custom_role.frontend_deploy_bucket_list.id
   member  = "serviceAccount:${google_service_account.frontend_deploy.email}"
 }
+
+# Same shape of gap as buckets.list above, different specific permission:
+# rsync also needs storage.buckets.get to resolve/validate a bucket
+# reference, which roles/storage.objectAdmin (object read/write) doesn't
+# include - reading a bucket's own metadata is a separate permission
+# category from reading/writing its objects. Unlike buckets.list, this one
+# genuinely can be scoped to a single bucket, so it's bound per-bucket
+# below rather than granted project-wide.
+resource "google_project_iam_custom_role" "frontend_deploy_bucket_get" {
+  role_id     = "taroFrontendDeployBucketGet"
+  title       = "Taro frontend deploy - bucket get"
+  description = "storage.buckets.get, needed by gcloud storage rsync to resolve a specific bucket reference; grants no access to bucket contents."
+  permissions = ["storage.buckets.get"]
+}
+
+resource "google_storage_bucket_iam_member" "frontend_deploy_bucket_get" {
+  bucket = google_storage_bucket.frontend.name
+  role   = google_project_iam_custom_role.frontend_deploy_bucket_get.id
+  member = "serviceAccount:${google_service_account.frontend_deploy.email}"
+}
+
+resource "google_storage_bucket_iam_member" "frontend_dev_deploy_bucket_get" {
+  bucket = google_storage_bucket.frontend_dev.name
+  role   = google_project_iam_custom_role.frontend_deploy_bucket_get.id
+  member = "serviceAccount:${google_service_account.frontend_deploy.email}"
+}
