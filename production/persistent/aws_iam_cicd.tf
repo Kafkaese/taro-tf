@@ -143,6 +143,11 @@ resource "aws_iam_role_policy" "github_actions_api_build_ecr_push" {
 # Terraform's. Scoped to exactly these two function names; both Lambda
 # resources also carry `ignore_changes = [image_uri]` so Terraform never
 # fights this CI-driven deploy. See MIGRATION.md.
+#
+# GetFunctionConfiguration is here for `aws lambda wait function-updated`,
+# not for update-function-code itself - the waiter polls that API under the
+# hood to check LastUpdateStatus, and fails on its own AccessDenied without
+# it even though the actual code update already succeeded.
 resource "aws_iam_role_policy" "github_actions_api_build_lambda_deploy" {
   name = "taro-lambda-deploy"
   role = aws_iam_role.github_actions_api_build.id
@@ -152,7 +157,10 @@ resource "aws_iam_role_policy" "github_actions_api_build_lambda_deploy" {
     Statement = [{
       Sid    = "UpdateApiLambdaCode"
       Effect = "Allow"
-      Action = "lambda:UpdateFunctionCode"
+      Action = [
+        "lambda:UpdateFunctionCode",
+        "lambda:GetFunctionConfiguration",
+      ]
       Resource = [
         "arn:aws:lambda:${var.aws_region}:${data.aws_caller_identity.current.account_id}:function:taro-production-api",
         "arn:aws:lambda:${var.aws_region}:${data.aws_caller_identity.current.account_id}:function:taro-dev-api",
