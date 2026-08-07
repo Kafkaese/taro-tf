@@ -26,6 +26,10 @@ output "frontend_bucket_name" {
   value = google_storage_bucket.frontend.name
 }
 
+output "frontend_dev_bucket_name" {
+  value = google_storage_bucket.frontend_dev.name
+}
+
 # The bucket is named to exactly match its domain (www.arms-tracker.app),
 # so it uses GCS's classic same-name-bucket hosting: every such bucket
 # shares this one fixed CNAME target, and GCS tells them apart by matching

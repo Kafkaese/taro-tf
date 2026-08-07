@@ -30,6 +30,7 @@ variable "postgres_data_volume_gb" {
 }
 
 variable "gcp_project_id" {
+  default = "taro-503313"
   description = "GCP project ID that owns the frontend static website bucket. No default - set via TF_VAR_gcp_project_id or a gitignored terraform.tfvars."
 }
 

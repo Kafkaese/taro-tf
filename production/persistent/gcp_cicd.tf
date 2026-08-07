@@ -56,6 +56,16 @@ resource "google_storage_bucket_iam_member" "frontend_deploy_write" {
   member = "serviceAccount:${google_service_account.frontend_deploy.email}"
 }
 
+# Same identity deploys to both buckets - dev and prod are gated by a
+# GitHub Environment approval rule within one workflow run, not by
+# separate branches/identities, so there's no reason to split this into a
+# second service account.
+resource "google_storage_bucket_iam_member" "frontend_deploy_write_dev" {
+  bucket = google_storage_bucket.frontend_dev.name
+  role   = "roles/storage.objectAdmin"
+  member = "serviceAccount:${google_service_account.frontend_deploy.email}"
+}
+
 # `gcloud storage rsync` needs storage.buckets.list to resolve/validate the
 # gs://bucket-name reference before it'll sync anything - and that specific
 # permission is inherently project-scoped (bucket enumeration, not access

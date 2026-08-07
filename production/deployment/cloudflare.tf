@@ -43,6 +43,16 @@ resource "cloudflare_record" "www" {
   proxied = true
 }
 
+# Same classic same-name-bucket pattern - dev.arms-tracker.app is its own
+# bucket, named to match, sharing the same fixed CNAME target as www.
+resource "cloudflare_record" "dev" {
+  zone_id = var.cloudflare_zone_id
+  name    = "dev"
+  type    = "CNAME"
+  content = "c.storage.googleapis.com"
+  proxied = true
+}
+
 # Points at the custom domain's regional target, not the raw execute-api
 # endpoint - the raw endpoint validates the Host header against its own
 # hostname and 403s on a mismatch, which is exactly what broke this before
