@@ -67,6 +67,14 @@ resource "cloudflare_record" "api" {
   proxied = true
 }
 
+resource "cloudflare_record" "api_dev" {
+  zone_id = var.cloudflare_zone_id
+  name    = "api-dev"
+  type    = "CNAME"
+  content = aws_apigatewayv2_domain_name.api_dev.domain_name_configuration[0].target_domain_name
+  proxied = true
+}
+
 # Full (strict) works for both origins here - the GCS bucket's website
 # endpoint (*.storage.googleapis.com) carries a real Google Trust Services
 # wildcard cert (verified directly via openssl rather than assumed), and

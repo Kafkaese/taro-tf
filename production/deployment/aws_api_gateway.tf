@@ -100,3 +100,84 @@ resource "aws_apigatewayv2_api_mapping" "api" {
   domain_name = aws_apigatewayv2_domain_name.api.id
   stage       = aws_apigatewayv2_stage.default.id
 }
+
+# --- dev: same shape as everything above, pointed at aws_lambda_function.api_dev ---
+
+resource "aws_apigatewayv2_api" "api_dev" {
+  name          = "taro-dev-api"
+  protocol_type = "HTTP"
+}
+
+resource "aws_apigatewayv2_integration" "api_dev" {
+  api_id                 = aws_apigatewayv2_api.api_dev.id
+  integration_type       = "AWS_PROXY"
+  integration_uri        = aws_lambda_function.api_dev.invoke_arn
+  payload_format_version = "2.0"
+}
+
+resource "aws_apigatewayv2_route" "api_dev_default" {
+  api_id    = aws_apigatewayv2_api.api_dev.id
+  route_key = "$default"
+  target    = "integrations/${aws_apigatewayv2_integration.api_dev.id}"
+}
+
+resource "aws_apigatewayv2_stage" "api_dev_default" {
+  api_id      = aws_apigatewayv2_api.api_dev.id
+  name        = "$default"
+  auto_deploy = true
+}
+
+resource "aws_lambda_permission" "api_dev_gateway" {
+  statement_id  = "AllowAPIGatewayInvoke"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.api_dev.function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_apigatewayv2_api.api_dev.execution_arn}/*/*"
+}
+
+resource "aws_acm_certificate" "api_dev" {
+  domain_name       = "api-dev.arms-tracker.app"
+  validation_method = "DNS"
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+resource "cloudflare_record" "api_dev_cert_validation" {
+  for_each = {
+    for dvo in aws_acm_certificate.api_dev.domain_validation_options : dvo.domain_name => {
+      name  = trimsuffix(trimsuffix(dvo.resource_record_name, "."), ".arms-tracker.app")
+      type  = dvo.resource_record_type
+      value = trimsuffix(dvo.resource_record_value, ".")
+    }
+  }
+
+  zone_id = var.cloudflare_zone_id
+  name    = each.value.name
+  type    = each.value.type
+  content = each.value.value
+  proxied = false
+  ttl     = 60
+}
+
+resource "aws_acm_certificate_validation" "api_dev" {
+  certificate_arn         = aws_acm_certificate.api_dev.arn
+  validation_record_fqdns = [for record in cloudflare_record.api_dev_cert_validation : record.hostname]
+}
+
+resource "aws_apigatewayv2_domain_name" "api_dev" {
+  domain_name = "api-dev.arms-tracker.app"
+
+  domain_name_configuration {
+    certificate_arn = aws_acm_certificate_validation.api_dev.certificate_arn
+    endpoint_type   = "REGIONAL"
+    security_policy = "TLS_1_2"
+  }
+}
+
+resource "aws_apigatewayv2_api_mapping" "api_dev" {
+  api_id      = aws_apigatewayv2_api.api_dev.id
+  domain_name = aws_apigatewayv2_domain_name.api_dev.id
+  stage       = aws_apigatewayv2_stage.api_dev_default.id
+}
